@@ -1,0 +1,20 @@
+# Entorno virtual (se recrea con requirements.txt)
+venv/
+
+# Variables de entorno con credenciales (NUNCA se sube)
+.env
+
+# Respaldo completo de datos: tiene usuarios, contraseñas encriptadas,
+# carros y órdenes. Es solo para uso personal (NUNCA se sube).
+# El catálogo sin datos personales (datos/catalogo.json) SÍ se sube.
+datos/tienda.json
+
+# Archivos compilados de Python
+__pycache__/
+*.pyc
+
+# Base de datos local por defecto (no se usa, el proyecto usa PostgreSQL)
+db.sqlite3
+
+# Configuración del editor
+.vscode/

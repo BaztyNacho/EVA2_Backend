@@ -1,0 +1,134 @@
+{% extends 'base.html' %}
+{% load static %}
+{% comment %}
+==========================================================================
+ PÁGINA DE LOGIN ( /login/ )
+ Diseño de acceso: cabecera mínima, panel visual y formulario.
+ El panel visual usa la foto static/img/acceso/login.png (opcional).
+ Envía usuario y contraseña a POST /api/auth/login/. Si son correctos,
+ guarda el access y el refresh con Sesion.guardar() y redirige:
+   - a la página indicada en ?next= (si venía de una página privada),
+   - o al inicio.
+==========================================================================
+{% endcomment %}
+
+{% block titulo %}Ingresar | Tienda de Hardware{% endblock %}
+
+{% block estilos %}
+  <link href="{% static 'css/acceso.css' %}" rel="stylesheet">
+{% endblock %}
+
+{% block cabecera %}
+  {% include 'includes/cabecera_acceso.html' %}
+{% endblock %}
+
+{% block contenido %}
+  <div class="acceso">
+
+    <!-- ===================== PANEL VISUAL ===================== -->
+    <aside class="panel-visual con-imagen" aria-hidden="true">
+      <!-- Foto opcional: static/img/acceso/login.png. Si no existe, onerror
+           elimina la imagen y queda el fondo carbón con pistas de circuito. -->
+      <img class="imagen-acceso" src="{% static 'img/acceso/login.png' %}" alt=""
+           onerror="this.parentElement.classList.remove('con-imagen'); this.remove();">
+      <i class="bi bi-cpu icono-panel"></i>
+      <h2>Tu próximo PC empieza aquí</h2>
+      <p>Ingresa para seguir armando tu equipo con los mejores componentes.</p>
+      <ul class="lista-beneficios">
+        <li><i class="bi bi-cart-check"></i><span>Tu carro queda guardado, incluso si cambias de dispositivo.</span></li>
+        <li><i class="bi bi-receipt"></i><span>Revisa el estado de tus órdenes en todo momento.</span></li>
+        <li><i class="bi bi-shield-lock"></i><span>Sesión protegida con tokens JWT.</span></li>
+      </ul>
+    </aside>
+
+    <!-- ===================== FORMULARIO ===================== -->
+    <section class="zona-formulario">
+      <div class="tarjeta-acceso">
+        <h1>Inicia sesión</h1>
+        <p class="text-muted text-center mb-4">Tu carro te espera tal como lo dejaste.</p>
+
+        <div class="alert alert-danger d-none" id="error-login" role="alert"></div>
+
+        <form id="formulario-login" novalidate>
+          <div class="mb-3">
+            <label for="username" class="form-label fw-semibold">Usuario</label>
+            <input type="text" class="form-control" id="username" autocomplete="username" required>
+          </div>
+          <div class="mb-4">
+            <label for="password" class="form-label fw-semibold">Contraseña</label>
+            <div class="input-group">
+              <input type="password" class="form-control" id="password" autocomplete="current-password" required>
+              <button class="btn btn-outline-secondary" type="button" id="ver-password" aria-label="Mostrar contraseña">
+                <i class="bi bi-eye"></i>
+              </button>
+            </div>
+          </div>
+          <button type="submit" class="btn btn-cobre w-100 py-2" id="boton-ingresar">Iniciar sesión</button>
+        </form>
+      </div>
+
+      <div class="caja-alterna">
+        ¿Eres nuevo? <a href="/registro/" class="fw-semibold">Crea tu cuenta</a>
+      </div>
+    </section>
+  </div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+  /* ------------------------------------------------------------------
+     Destino después del login. Solo se aceptan rutas internas que
+     empiecen con "/" (y no con "//"), para evitar redirecciones hacia
+     sitios externos (open redirect).
+     ------------------------------------------------------------------ */
+  function destinoSeguro() {
+    const next = new URLSearchParams(window.location.search).get('next');
+    return next && next.startsWith('/') && !next.startsWith('//') ? next : '/';
+  }
+
+  // Si ya hay sesión activa, no tiene sentido mostrar el login.
+  if (Sesion.usuario()) window.location.href = destinoSeguro();
+
+  document.getElementById('ver-password').addEventListener('click', event => {
+    const campo = document.getElementById('password');
+    const visible = campo.type === 'text';
+    campo.type = visible ? 'password' : 'text';
+    event.currentTarget.innerHTML = `<i class="bi ${visible ? 'bi-eye' : 'bi-eye-slash'}"></i>`;
+  });
+
+  document.getElementById('formulario-login').addEventListener('submit', async evento => {
+    evento.preventDefault();
+    const boton = document.getElementById('boton-ingresar');
+    const alerta = document.getElementById('error-login');
+    const username = document.getElementById('username').value.trim();
+    const password = document.getElementById('password').value;
+
+    if (!username || !password) {
+      alerta.textContent = 'Ingresa tu usuario y contraseña.';
+      alerta.classList.remove('d-none');
+      return;
+    }
+
+    boton.disabled = true;
+    boton.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Ingresando...';
+
+    const { ok, datos } = await apiFetch('/auth/login/', {
+      method: 'POST',
+      body: { username, password },
+      redirigir401: false,
+    });
+
+    if (ok) {
+      Sesion.guardar(datos.access, datos.refresh);
+      guardarAviso(`Bienvenido, ${datos.usuario.username}.`, 'success');
+      window.location.href = destinoSeguro();
+      return;
+    }
+
+    alerta.textContent = 'Usuario o contraseña incorrectos.';
+    alerta.classList.remove('d-none');
+    boton.disabled = false;
+    boton.textContent = 'Iniciar sesión';
+  });
+</script>
+{% endblock %}

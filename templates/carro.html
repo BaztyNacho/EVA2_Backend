@@ -1,0 +1,228 @@
+{% extends 'base.html' %}
+{% load static %}
+{% comment %}
+==========================================================================
+ CARRO DE COMPRAS ( /carro/ )  -  PÁGINA PRIVADA (solo CLIENTE)
+ requerirSesion('CLIENTE') redirige al login si no hay sesión, o al
+ inicio si la cuenta es de administrador.
+ Endpoints usados:
+   GET    /api/carro/               ver ítems y total
+   PATCH  /api/carro/items/{id}/    cambiar cantidad
+   DELETE /api/carro/items/{id}/    eliminar un ítem
+   DELETE /api/carro/               vaciar el carro
+   POST   /api/ordenes/checkout/    convertir el carro en una orden
+   GET    /api/productos/           stock actual (informativo) y foto
+==========================================================================
+{% endcomment %}
+
+{% block titulo %}Mi carro | Tienda de Hardware{% endblock %}
+
+{% block estilos %}
+  <link href="{% static 'css/cuenta.css' %}" rel="stylesheet">
+{% endblock %}
+
+{% block contenido %}
+  <div class="container py-4">
+    <nav aria-label="Ruta de navegación">
+      <ol class="breadcrumb mb-2">
+        <li class="breadcrumb-item"><a href="/">Inicio</a></li>
+        <li class="breadcrumb-item active" aria-current="page">Mi carro</li>
+      </ol>
+    </nav>
+    <h1 class="h3 fw-bold mb-3">Mi carro</h1>
+
+    <div id="contenido-carro">
+      <div class="text-center py-5"><div class="spinner-border text-secondary" role="status"><span class="visually-hidden">Cargando...</span></div></div>
+    </div>
+  </div>
+
+  <!-- Modal de confirmación para vaciar el carro -->
+  <div class="modal fade" id="modal-vaciar" tabindex="-1" aria-labelledby="titulo-modal-vaciar" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h2 class="modal-title h5" id="titulo-modal-vaciar">Vaciar carro</h2>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+        </div>
+        <div class="modal-body">Se quitarán todos los productos de tu carro.</div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Mantener productos</button>
+          <button type="button" class="btn btn-danger" id="confirmar-vaciar">Vaciar carro</button>
+        </div>
+      </div>
+    </div>
+  </div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+  /* Página privada: solo clientes autenticados */
+  const usuario = requerirSesion('CLIENTE');
+
+  // Datos del catálogo por id de producto (stock, foto e ícono de categoría)
+  let productosPorId = {};
+
+  async function cargarCarro() {
+    const [carro, productos] = await Promise.all([apiFetch('/carro/'), apiFetch('/productos/')]);
+    if (productos.ok) {
+      productosPorId = Object.fromEntries(productos.datos.map(p => [p.id, p]));
+    }
+    if (!carro.ok) {
+      document.getElementById('contenido-carro').innerHTML = '<div class="alert alert-danger">No se pudo cargar tu carro.</div>';
+      return;
+    }
+    mostrarCarro(carro.datos);
+  }
+
+  /* ==================================================================
+     DIBUJAR EL CARRO
+     El total que se muestra usa los precios ACTUALES del catálogo; el
+     precio se congela recién en el checkout (ItemOrden).
+     ================================================================== */
+  function mostrarCarro(carro) {
+    actualizarContadorCarro(carro.total_unidades);
+    const contenedor = document.getElementById('contenido-carro');
+
+    if (!carro.items.length) {
+      contenedor.innerHTML = `
+        <div class="estado-vacio">
+          <i class="bi bi-cart-x"></i>
+          <p class="fw-semibold fs-5 mt-2 mb-1">Tu carro está vacío</p>
+          <p class="text-muted mb-4">Agrega componentes desde el catálogo y aparecerán aquí.</p>
+          <a class="btn btn-cobre" href="/catalogo/">Ir al catálogo</a>
+        </div>`;
+      return;
+    }
+
+    contenedor.innerHTML = `
+      <div class="row g-4">
+        <div class="col-lg-8">
+          <div class="lista-carro">${carro.items.map(filaItem).join('')}</div>
+          <button class="btn btn-link text-danger mt-2 px-0" type="button" data-bs-toggle="modal" data-bs-target="#modal-vaciar">
+            <i class="bi bi-trash3 me-1"></i>Vaciar carro
+          </button>
+        </div>
+        <div class="col-lg-4">
+          <aside class="resumen-compra" aria-label="Resumen de la compra">
+            <h2 class="h5 fw-bold mb-3">Resumen</h2>
+            <div class="d-flex justify-content-between mb-2">
+              <span>Productos (${carro.total_unidades} unidad${carro.total_unidades === 1 ? '' : 'es'})</span>
+              <span>${precioCLP(carro.total)}</span>
+            </div>
+            <div class="d-flex justify-content-between mb-3 text-muted">
+              <span>Despacho</span><span>Gratis</span>
+            </div>
+            <hr>
+            <div class="d-flex justify-content-between align-items-end mb-3">
+              <span class="fw-semibold">Total</span>
+              <span class="total-compra">${precioCLP(carro.total)}</span>
+            </div>
+            <button class="btn btn-cobre btn-lg w-100" type="button" id="boton-checkout">Confirmar compra</button>
+            <p class="small text-muted mt-3 mb-0">
+              Al confirmar se genera tu orden con estos precios. El stock se descuenta
+              cuando pagas la orden.
+            </p>
+          </aside>
+        </div>
+      </div>`;
+
+    document.getElementById('boton-checkout').addEventListener('click', confirmarCompra);
+  }
+
+  function filaItem(item) {
+    const producto = productosPorId[item.producto];
+    const stock = producto ? producto.stock : null;
+    const visual = producto ? imagenProducto(producto) : '<i class="bi bi-pc-display" aria-hidden="true"></i>';
+    let avisoStock = '';
+    if (stock === 0) {
+      avisoStock = '<div class="small text-danger mt-1"><i class="bi bi-exclamation-triangle me-1"></i>Sin stock por ahora</div>';
+    } else if (stock !== null && item.cantidad > stock) {
+      avisoStock = `<div class="small text-danger mt-1"><i class="bi bi-exclamation-triangle me-1"></i>Solo quedan ${stock}. El pago podría ser rechazado.</div>`;
+    }
+
+    return `
+      <div class="item-carro">
+        <a class="icono-item ${producto && producto.imagen ? 'con-imagen' : ''}" href="/producto/${item.producto}/" aria-label="Ver ${escaparHTML(item.producto_nombre)}">
+          ${visual}
+        </a>
+        <div class="datos-item">
+          <a class="nombre-producto d-block" href="/producto/${item.producto}/">${escaparHTML(item.producto_nombre)}</a>
+          <span class="sku">SKU ${escaparHTML(item.sku)}</span>
+          <div class="small text-muted">${precioCLP(item.precio_unitario)} c/u</div>
+          ${avisoStock}
+        </div>
+        <div class="input-group input-group-sm selector-cantidad">
+          <button class="btn btn-outline-secondary" type="button" data-accion="restar" data-item="${item.id}" data-cantidad="${item.cantidad}" aria-label="Restar una unidad" ${item.cantidad <= 1 ? 'disabled' : ''}><i class="bi bi-dash"></i></button>
+          <input type="number" class="form-control" value="${item.cantidad}" min="1" data-item="${item.id}" aria-label="Cantidad de ${escaparHTML(item.producto_nombre)}">
+          <button class="btn btn-outline-secondary" type="button" data-accion="sumar" data-item="${item.id}" data-cantidad="${item.cantidad}" aria-label="Sumar una unidad"><i class="bi bi-plus"></i></button>
+        </div>
+        <div class="subtotal-item">${precioCLP(item.subtotal)}</div>
+        <button class="btn btn-sm btn-outline-danger" type="button" data-accion="eliminar" data-item="${item.id}" aria-label="Eliminar ${escaparHTML(item.producto_nombre)}">
+          <i class="bi bi-trash3"></i>
+        </button>
+      </div>`;
+  }
+
+  /* ==================================================================
+     ACCIONES SOBRE LOS ÍTEMS
+     Cada respuesta de la API trae el carro completo actualizado, así
+     que se vuelve a dibujar con esos datos.
+     ================================================================== */
+  async function cambiarCantidad(itemId, cantidad) {
+    if (cantidad < 1) return;
+    const { ok, datos } = await apiFetch(`/carro/items/${itemId}/`, { method: 'PATCH', body: { cantidad } });
+    if (ok) mostrarCarro(datos); else mostrarToast('No se pudo actualizar la cantidad.', 'danger');
+  }
+
+  async function eliminarItem(itemId) {
+    const { ok, datos } = await apiFetch(`/carro/items/${itemId}/`, { method: 'DELETE' });
+    if (ok) {
+      mostrarCarro(datos);
+      mostrarToast('Producto eliminado del carro.', 'info');
+    }
+  }
+
+  document.getElementById('contenido-carro').addEventListener('click', evento => {
+    const boton = evento.target.closest('[data-accion]');
+    if (!boton) return;
+    const itemId = boton.dataset.item;
+    const cantidad = Number(boton.dataset.cantidad);
+    if (boton.dataset.accion === 'restar') cambiarCantidad(itemId, cantidad - 1);
+    if (boton.dataset.accion === 'sumar') cambiarCantidad(itemId, cantidad + 1);
+    if (boton.dataset.accion === 'eliminar') eliminarItem(itemId);
+  });
+
+  document.getElementById('contenido-carro').addEventListener('change', evento => {
+    const campo = evento.target.closest('input[data-item]');
+    if (campo) cambiarCantidad(campo.dataset.item, Math.max(1, Number(campo.value) || 1));
+  });
+
+  document.getElementById('confirmar-vaciar').addEventListener('click', async () => {
+    const { ok, datos } = await apiFetch('/carro/', { method: 'DELETE' });
+    bootstrap.Modal.getInstance(document.getElementById('modal-vaciar')).hide();
+    if (ok) mostrarCarro(datos);
+  });
+
+  /* ==================================================================
+     CHECKOUT: POST /api/ordenes/checkout/
+     Crea la orden PENDIENTE con los precios congelados y vacía el carro.
+     Después se lleva al cliente a "Mis órdenes" con la orden abierta.
+     ================================================================== */
+  async function confirmarCompra(evento) {
+    const boton = evento.currentTarget;
+    boton.disabled = true;
+    boton.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Generando orden...';
+    const { ok, datos } = await apiFetch('/ordenes/checkout/', { method: 'POST' });
+    if (ok) {
+      guardarAviso('Orden creada. Revisa el detalle y confirma el pago.', 'success');
+      window.location.href = `/mis-ordenes/?orden=${datos.id}`;
+      return;
+    }
+    mostrarToast((datos && datos.detail) || 'No se pudo generar la orden.', 'danger');
+    boton.disabled = false;
+    boton.textContent = 'Confirmar compra';
+  }
+
+  if (usuario) document.addEventListener('DOMContentLoaded', cargarCarro);
+</script>
+{% endblock %}

@@ -1,0 +1,19 @@
+{% comment %}
+==========================================================================
+ FOOTER REUTILIZABLE CON LOS DATOS DEL ALUMNO
+ Se incluye en todas las vistas HTML: inicio, páginas de la tienda,
+ Swagger y la API navegable de DRF. Los datos vienen de la variable
+ {{ alumno }}, que inyecta el context processor 'datos_alumno'
+ (settings.DATOS_ALUMNO).
+ Los estilos van en línea para que se vea igual dentro de plantillas
+ ajenas (Swagger y DRF), que no cargan el CSS de la tienda.
+ Colores: fondo carbón #171311, línea ámbar #E29C40, texto claro.
+==========================================================================
+{% endcomment %}
+<footer style="margin-top:48px;padding:18px 24px;border-top:3px solid #E29C40;background:#171311;color:#C9C2BC;font-family:'IBM Plex Sans',system-ui,-apple-system,'Segoe UI',sans-serif;font-size:14px;line-height:1.6;text-align:center;">
+  <strong style="color:#FFFFFF;">{{ alumno.nombre }}</strong>
+  &nbsp;|&nbsp; Sección {{ alumno.seccion }}
+  &nbsp;|&nbsp; Año {{ alumno.anio }}
+  <br>
+  <span>EVA 2 Desarrollo Backend: Tienda de Hardware y Componentes PC</span>
+</footer>

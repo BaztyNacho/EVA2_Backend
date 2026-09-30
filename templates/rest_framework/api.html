@@ -1,0 +1,14 @@
+{% extends 'rest_framework/base.html' %}
+{% comment %}
+==========================================================================
+ API NAVEGABLE DE DRF CON FOOTER
+ Cuando se abre un endpoint en el navegador (ej: /api/productos/), DRF
+ muestra su interfaz HTML. Esta plantilla reemplaza a la original
+ (mismo nombre, pero la carpeta /templates del proyecto tiene prioridad)
+ y agrega el footer con los datos del alumno.
+==========================================================================
+{% endcomment %}
+{% block content %}
+  {{ block.super }}
+  {% include 'includes/footer.html' %}
+{% endblock %}

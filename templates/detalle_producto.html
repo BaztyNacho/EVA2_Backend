@@ -1,0 +1,163 @@
+{% extends 'base.html' %}
+{% load static %}
+{% comment %}
+==========================================================================
+ DETALLE DE PRODUCTO ( /producto/<id>/ )
+ Página pública. La vista de Django valida que el producto exista (si
+ no, muestra la página 404) y entrega su id y nombre para el <title>.
+ El resto de los datos se cargan con GET /api/productos/<id>/.
+ Relacionados: GET /api/productos/?categoria=<id>&con_stock=true
+==========================================================================
+{% endcomment %}
+
+{% block titulo %}{{ producto.nombre }} | Tienda de Hardware{% endblock %}
+
+{% block estilos %}
+  <link href="{% static 'css/paginas.css' %}" rel="stylesheet">
+{% endblock %}
+
+{% block contenido %}
+  <div class="container py-4">
+    <nav aria-label="Ruta de navegación">
+      <ol class="breadcrumb mb-3" id="ruta-navegacion">
+        <li class="breadcrumb-item"><a href="/">Inicio</a></li>
+        <li class="breadcrumb-item"><a href="/catalogo/">Catálogo</a></li>
+        <li class="breadcrumb-item active" aria-current="page">{{ producto.nombre }}</li>
+      </ol>
+    </nav>
+
+    <div id="ficha-producto">
+      <div class="text-center py-5"><div class="spinner-border text-secondary" role="status"><span class="visually-hidden">Cargando...</span></div></div>
+    </div>
+
+    <section class="mt-5 d-none" id="seccion-relacionados" aria-labelledby="titulo-relacionados">
+      <h2 class="h4 fw-bold mb-3" id="titulo-relacionados">También te puede interesar</h2>
+      <div class="row g-3" id="lista-relacionados"></div>
+    </section>
+  </div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+  const PRODUCTO_ID = {{ producto.id }};
+
+  /* ==================================================================
+     CAJA DE COMPRA según el rol:
+     - Sin stock: aviso y botón deshabilitado.
+     - Administrador: aviso (el administrador no compra) y botón
+       "Editar en el panel", que abre el formulario de este producto.
+     - Visitante o cliente: selector de cantidad (máximo = stock) y
+       botón "Agregar al carro". Al visitante, agregarAlCarro() lo
+       envía al login.
+     ================================================================== */
+  function cajaCompra(producto) {
+    if (Sesion.esAdministrador()) {
+      return `
+        <p class="text-muted mb-3">
+          <i class="bi bi-person-gear me-1"></i>Estás viendo el producto como administrador.
+          Las cuentas de administrador no compran; puedes modificar este producto desde el panel.
+        </p>
+        <a class="btn btn-placa btn-lg w-100" href="/panel/?editar=${producto.id}">
+          <i class="bi bi-pencil-square me-1"></i>Editar en el panel
+        </a>`;
+    }
+    if (producto.stock <= 0) {
+      return `
+        <p class="text-muted mb-3">Este producto no tiene stock por ahora.</p>
+        <button class="btn btn-secondary btn-lg w-100" disabled>Sin stock</button>`;
+    }
+    return `
+      <label class="form-label fw-semibold" for="cantidad">Cantidad</label>
+      <div class="d-flex flex-wrap gap-3 align-items-center">
+        <div class="input-group selector-cantidad">
+          <button class="btn btn-outline-secondary" type="button" id="restar" aria-label="Restar una unidad"><i class="bi bi-dash"></i></button>
+          <input type="number" class="form-control" id="cantidad" value="1" min="1" max="${producto.stock}">
+          <button class="btn btn-outline-secondary" type="button" id="sumar" aria-label="Sumar una unidad"><i class="bi bi-plus"></i></button>
+        </div>
+        <span class="text-muted small">Máximo ${producto.stock} unidad${producto.stock === 1 ? '' : 'es'}</span>
+      </div>
+      <button class="btn btn-cobre btn-lg w-100 mt-3" type="button" id="boton-agregar">
+        <i class="bi bi-cart-plus me-1"></i>Agregar al carro
+      </button>
+      <p class="small text-muted mt-2 mb-0">El stock se reserva recién al pagar la orden.</p>`;
+  }
+
+  function estadoStock(stock) {
+    if (stock <= 0) return '<span class="badge text-bg-secondary">Sin stock</span>';
+    if (stock <= 5) return `<span class="badge text-bg-warning">Últimas ${stock} unidades</span>`;
+    return `<span class="badge text-bg-success">${stock} unidades disponibles</span>`;
+  }
+
+  async function cargarProducto() {
+    const contenedor = document.getElementById('ficha-producto');
+    const { ok, datos: producto } = await apiFetch(`/productos/${PRODUCTO_ID}/`);
+    if (!ok) {
+      contenedor.innerHTML = '<div class="alert alert-danger">No se pudo cargar el producto.</div>';
+      return;
+    }
+
+    // Ruta de navegación con enlace a la categoría del producto
+    document.getElementById('ruta-navegacion').innerHTML = `
+      <li class="breadcrumb-item"><a href="/">Inicio</a></li>
+      <li class="breadcrumb-item"><a href="/catalogo/?categoria=${producto.categoria}">${escaparHTML(producto.categoria_nombre)}</a></li>
+      <li class="breadcrumb-item active" aria-current="page">${escaparHTML(producto.nombre)}</li>`;
+
+    contenedor.innerHTML = `
+      <div class="row g-4">
+        <div class="col-lg-5">
+          <div class="detalle-imagen ${producto.imagen ? 'con-imagen' : ''}">${imagenProducto(producto)}</div>
+        </div>
+        <div class="col-lg-7">
+          <span class="detalle-marca">${escaparHTML(producto.marca)}</span>
+          <h1 class="h2 fw-bold mt-1">${escaparHTML(producto.nombre)}</h1>
+          <p class="sku mb-3">SKU ${escaparHTML(producto.sku)}</p>
+
+          <div class="caja-compra mb-4">
+            <div class="detalle-precio mb-2">${precioCLP(producto.precio)}</div>
+            <div class="mb-3">${estadoStock(producto.stock)}</div>
+            ${cajaCompra(producto)}
+          </div>
+
+          <h2 class="h5 fw-bold">Descripción</h2>
+          <p>${producto.descripcion ? escaparHTML(producto.descripcion) : 'Este producto aún no tiene descripción.'}</p>
+
+          <h2 class="h5 fw-bold mt-4">Ficha técnica</h2>
+          <table class="table table-bordered ficha-tecnica bg-white">
+            <tbody>
+              <tr><th scope="row">Marca</th><td>${escaparHTML(producto.marca)}</td></tr>
+              <tr><th scope="row">Modelo</th><td>${escaparHTML(producto.nombre)}</td></tr>
+              <tr><th scope="row">Categoría</th><td>${escaparHTML(producto.categoria_nombre)}</td></tr>
+              <tr><th scope="row">Código SKU</th><td><span class="sku">${escaparHTML(producto.sku)}</span></td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>`;
+
+    activarSelectorCantidad(producto.stock);
+    cargarRelacionados(producto);
+  }
+
+  /* Botones - y + del selector, limitados entre 1 y el stock. */
+  function activarSelectorCantidad(stock) {
+    const campo = document.getElementById('cantidad');
+    if (!campo) return;
+    const ajustar = valor => { campo.value = Math.min(Math.max(1, valor || 1), stock); };
+    document.getElementById('restar').addEventListener('click', () => ajustar(Number(campo.value) - 1));
+    document.getElementById('sumar').addEventListener('click', () => ajustar(Number(campo.value) + 1));
+    campo.addEventListener('change', () => ajustar(Number(campo.value)));
+    document.getElementById('boton-agregar').addEventListener('click', evento =>
+      agregarAlCarro(PRODUCTO_ID, Number(campo.value), evento.currentTarget));
+  }
+
+  async function cargarRelacionados(producto) {
+    const { ok, datos } = await apiFetch(`/productos/?categoria=${producto.categoria}&con_stock=true`);
+    if (!ok) return;
+    const relacionados = datos.filter(p => p.id !== producto.id).slice(0, 4);
+    if (!relacionados.length) return;
+    document.getElementById('lista-relacionados').innerHTML = relacionados.map(p => tarjetaProducto(p)).join('');
+    document.getElementById('seccion-relacionados').classList.remove('d-none');
+  }
+
+  document.addEventListener('DOMContentLoaded', cargarProducto);
+</script>
+{% endblock %}

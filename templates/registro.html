@@ -1,0 +1,149 @@
+{% extends 'base.html' %}
+{% load static %}
+{% comment %}
+==========================================================================
+ PÁGINA DE REGISTRO ( /registro/ )
+ Diseño de acceso: cabecera mínima, panel visual y formulario.
+ El panel visual usa la foto static/img/acceso/registro.png (opcional).
+ Envía los datos a POST /api/auth/registro/ (la cuenta se crea como
+ CLIENTE y la señal le crea su carro). Si hay errores de validación,
+ se muestran bajo cada campo. Si el registro funciona, se inicia sesión
+ automáticamente con POST /api/auth/login/.
+==========================================================================
+{% endcomment %}
+
+{% block titulo %}Crear cuenta | Tienda de Hardware{% endblock %}
+
+{% block estilos %}
+  <link href="{% static 'css/acceso.css' %}" rel="stylesheet">
+{% endblock %}
+
+{% block cabecera %}
+  {% include 'includes/cabecera_acceso.html' %}
+{% endblock %}
+
+{% block contenido %}
+  <div class="acceso">
+
+    <!-- ===================== PANEL VISUAL ===================== -->
+    <aside class="panel-visual con-imagen" aria-hidden="true">
+      <!-- Foto opcional: static/img/acceso/registro.png. Si no existe, onerror
+           elimina la imagen y queda el fondo carbón con pistas de circuito. -->
+      <img class="imagen-acceso" src="{% static 'img/acceso/registro.png' %}" alt=""
+           onerror="this.parentElement.classList.remove('con-imagen'); this.remove();">
+      <i class="bi bi-motherboard icono-panel"></i>
+      <h2>Crea tu cuenta en minutos</h2>
+      <p>Regístrate para comprar componentes y seguir tus pedidos.</p>
+      <ul class="lista-beneficios">
+        <li><i class="bi bi-cart-check"></i><span>Un carro propio que se conserva entre sesiones.</span></li>
+        <li><i class="bi bi-tags"></i><span>Precios congelados al confirmar tu compra.</span></li>
+        <li><i class="bi bi-truck"></i><span>Despacho a todo Chile al confirmar el pago.</span></li>
+      </ul>
+    </aside>
+
+    <!-- ===================== FORMULARIO ===================== -->
+    <section class="zona-formulario">
+      <div class="tarjeta-acceso">
+        <h1>Crea tu cuenta</h1>
+        <p class="text-muted text-center mb-4">Guarda tu carro y revisa tus órdenes desde cualquier dispositivo.</p>
+
+        <form id="formulario-registro" novalidate>
+          <div class="row g-3">
+            <div class="col-sm-6">
+              <label for="first_name" class="form-label fw-semibold">Nombre</label>
+              <input type="text" class="form-control" id="first_name" autocomplete="given-name">
+              <div class="invalid-feedback"></div>
+            </div>
+            <div class="col-sm-6">
+              <label for="last_name" class="form-label fw-semibold">Apellido</label>
+              <input type="text" class="form-control" id="last_name" autocomplete="family-name">
+              <div class="invalid-feedback"></div>
+            </div>
+            <div class="col-12">
+              <label for="username" class="form-label fw-semibold">Usuario</label>
+              <input type="text" class="form-control" id="username" autocomplete="username" required>
+              <div class="invalid-feedback"></div>
+            </div>
+            <div class="col-12">
+              <label for="email" class="form-label fw-semibold">Correo electrónico</label>
+              <input type="email" class="form-control" id="email" autocomplete="email" required>
+              <div class="invalid-feedback"></div>
+            </div>
+            <div class="col-12">
+              <label for="password" class="form-label fw-semibold">Contraseña</label>
+              <input type="password" class="form-control" id="password" autocomplete="new-password" required>
+              <div class="form-text">Mínimo 8 caracteres, que no sean solo números.</div>
+              <div class="invalid-feedback"></div>
+            </div>
+            <div class="col-12">
+              <label for="password2" class="form-label fw-semibold">Repite la contraseña</label>
+              <input type="password" class="form-control" id="password2" autocomplete="new-password" required>
+              <div class="invalid-feedback"></div>
+            </div>
+          </div>
+          <button type="submit" class="btn btn-cobre w-100 py-2 mt-4" id="boton-registrar">Crear cuenta</button>
+        </form>
+      </div>
+
+      <div class="caja-alterna">
+        ¿Ya tienes cuenta? <a href="/login/" class="fw-semibold">Inicia sesión</a>
+      </div>
+    </section>
+  </div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+  if (Sesion.usuario()) window.location.href = '/';
+
+  const CAMPOS = ['first_name', 'last_name', 'username', 'email', 'password', 'password2'];
+
+  /* ------------------------------------------------------------------
+     Muestra los errores que devuelve el serializer de DRF.
+     La API responde con un objeto { campo: ["mensaje", ...] }; cada
+     mensaje se ubica bajo su campo con la clase is-invalid de Bootstrap.
+     ------------------------------------------------------------------ */
+  function mostrarErrores(errores) {
+    CAMPOS.forEach(campo => {
+      const input = document.getElementById(campo);
+      const mensaje = errores[campo];
+      input.classList.toggle('is-invalid', !!mensaje);
+      input.parentElement.querySelector('.invalid-feedback').textContent = mensaje ? mensaje.join(' ') : '';
+    });
+  }
+
+  document.getElementById('formulario-registro').addEventListener('submit', async evento => {
+    evento.preventDefault();
+    const boton = document.getElementById('boton-registrar');
+    const datosFormulario = {};
+    CAMPOS.forEach(campo => { datosFormulario[campo] = document.getElementById(campo).value.trim(); });
+
+    boton.disabled = true;
+    boton.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Creando cuenta...';
+
+    const registro = await apiFetch('/auth/registro/', { method: 'POST', body: datosFormulario, redirigir401: false });
+
+    if (!registro.ok) {
+      mostrarErrores(registro.datos || {});
+      boton.disabled = false;
+      boton.textContent = 'Crear cuenta';
+      return;
+    }
+
+    // Registro exitoso: se inicia sesión automáticamente.
+    const login = await apiFetch('/auth/login/', {
+      method: 'POST',
+      body: { username: datosFormulario.username, password: datosFormulario.password },
+      redirigir401: false,
+    });
+    if (login.ok) {
+      Sesion.guardar(login.datos.access, login.datos.refresh);
+      guardarAviso(`Cuenta creada. Bienvenido, ${datosFormulario.username}.`, 'success');
+      window.location.href = '/';
+    } else {
+      guardarAviso('Cuenta creada. Ya puedes ingresar.', 'success');
+      window.location.href = '/login/';
+    }
+  });
+</script>
+{% endblock %}

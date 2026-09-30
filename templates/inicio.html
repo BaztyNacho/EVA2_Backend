@@ -1,0 +1,199 @@
+{% extends 'base.html' %}
+{% load static %}
+{% comment %}
+==========================================================================
+ PORTADA DE LA TIENDA ( / )
+ - Carrusel de Bootstrap con una diapositiva por categoría (6 en total).
+   Cada diapositiva usa una foto de static/img/banner/. Si la foto no
+   existe, onerror elimina el <img> y la clase con-imagen, y se ve el
+   diseño de color sólido con ícono (fondos carbón, alternados).
+   Todos los botones usan el naranja de acción (btn-cobre).
+ - Accesos a categorías: GET /api/categorias/ (incluye total_productos).
+ - Destacados: GET /api/productos/?con_stock=true&ordering=-fecha_creacion
+   (usa los filtros de django-filter y OrderingFilter).
+ - Franja de beneficios.
+==========================================================================
+{% endcomment %}
+
+{% block titulo %}Tienda de Hardware | Componentes para armar tu PC{% endblock %}
+
+{% block contenido %}
+
+  <!-- ===================== CARRUSEL DE PORTADA ===================== -->
+  <section id="portada" class="portada carousel slide" data-bs-ride="carousel" aria-label="Destacados de la tienda">
+    <div class="carousel-indicators">
+      <button type="button" data-bs-target="#portada" data-bs-slide-to="0" class="active" aria-current="true" aria-label="Diapositiva 1"></button>
+      <button type="button" data-bs-target="#portada" data-bs-slide-to="1" aria-label="Diapositiva 2"></button>
+      <button type="button" data-bs-target="#portada" data-bs-slide-to="2" aria-label="Diapositiva 3"></button>
+      <button type="button" data-bs-target="#portada" data-bs-slide-to="3" aria-label="Diapositiva 4"></button>
+      <button type="button" data-bs-target="#portada" data-bs-slide-to="4" aria-label="Diapositiva 5"></button>
+      <button type="button" data-bs-target="#portada" data-bs-slide-to="5" aria-label="Diapositiva 6"></button>
+    </div>
+    <div class="carousel-inner">
+      <div class="carousel-item active">
+        <div class="diapositiva diapositiva-placa con-imagen">
+          <img class="imagen-banner" src="{% static 'img/banner/procesadores.png' %}" alt=""
+               onerror="this.parentElement.classList.remove('con-imagen'); this.remove();">
+          <div class="container">
+            <h2>Procesadores para cada tipo de equipo</h2>
+            <p>AMD e Intel de última generación, desde oficina hasta estaciones de trabajo.</p>
+            <a class="btn btn-cobre btn-lg" href="/catalogo/?categoria_nombre=procesador">Ver procesadores</a>
+          </div>
+          <i class="bi bi-cpu icono-fondo" aria-hidden="true"></i>
+        </div>
+      </div>
+      <div class="carousel-item">
+        <div class="diapositiva diapositiva-tinta con-imagen">
+          <img class="imagen-banner" src="{% static 'img/banner/tarjetas-video.png' %}" alt=""
+               onerror="this.parentElement.classList.remove('con-imagen'); this.remove();">
+          <div class="container">
+            <h2>Tarjetas de video para jugar en alta resolución</h2>
+            <p>NVIDIA GeForce, AMD Radeon e Intel Arc para gaming, edición y diseño.</p>
+            <a class="btn btn-cobre btn-lg" href="/catalogo/?categoria_nombre=video">Ver tarjetas de video</a>
+          </div>
+          <i class="bi bi-gpu-card icono-fondo" aria-hidden="true"></i>
+        </div>
+      </div>
+      <div class="carousel-item">
+        <div class="diapositiva diapositiva-placa con-imagen">
+          <img class="imagen-banner" src="{% static 'img/banner/memorias-ram.png' %}" alt=""
+               onerror="this.parentElement.classList.remove('con-imagen'); this.remove();">
+          <div class="container">
+            <h2>Más memoria, más fluidez</h2>
+            <p>Kits DDR4 y DDR5 en dual channel para tu próxima actualización.</p>
+            <a class="btn btn-cobre btn-lg" href="/catalogo/?categoria_nombre=ram">Ver memorias RAM</a>
+          </div>
+          <i class="bi bi-memory icono-fondo" aria-hidden="true"></i>
+        </div>
+      </div>
+      <div class="carousel-item">
+        <div class="diapositiva diapositiva-tinta con-imagen">
+          <img class="imagen-banner" src="{% static 'img/banner/almacenamiento.png' %}" alt=""
+               onerror="this.parentElement.classList.remove('con-imagen'); this.remove();">
+          <div class="container">
+            <h2>Almacenamiento rápido y espacioso</h2>
+            <p>SSD NVMe para cargar todo en segundos y discos duros para guardar tus archivos.</p>
+            <a class="btn btn-cobre btn-lg" href="/catalogo/?categoria_nombre=almacenamiento">Ver almacenamiento</a>
+          </div>
+          <i class="bi bi-device-ssd icono-fondo" aria-hidden="true"></i>
+        </div>
+      </div>
+      <div class="carousel-item">
+        <div class="diapositiva diapositiva-placa con-imagen">
+          <img class="imagen-banner" src="{% static 'img/banner/placas-madre.png' %}" alt=""
+               onerror="this.parentElement.classList.remove('con-imagen'); this.remove();">
+          <div class="container">
+            <h2>La base de tu equipo</h2>
+            <p>Placas madre AM4, AM5 y LGA1700 de ASUS, MSI, Gigabyte y ASRock.</p>
+            <a class="btn btn-cobre btn-lg" href="/catalogo/?categoria_nombre=placa">Ver placas madre</a>
+          </div>
+          <i class="bi bi-motherboard icono-fondo" aria-hidden="true"></i>
+        </div>
+      </div>
+      <div class="carousel-item">
+        <div class="diapositiva diapositiva-tinta con-imagen">
+          <img class="imagen-banner" src="{% static 'img/banner/fuentes-poder.png' %}" alt=""
+               onerror="this.parentElement.classList.remove('con-imagen'); this.remove();">
+          <div class="container">
+            <h2>Energía estable para tu PC</h2>
+            <p>Fuentes certificadas 80 Plus Bronze, Gold y Platinum.</p>
+            <a class="btn btn-cobre btn-lg" href="/catalogo/?categoria_nombre=fuente">Ver fuentes de poder</a>
+          </div>
+          <i class="bi bi-lightning-charge icono-fondo" aria-hidden="true"></i>
+        </div>
+      </div>
+    </div>
+    <button class="carousel-control-prev" type="button" data-bs-target="#portada" data-bs-slide="prev">
+      <span class="carousel-control-prev-icon" aria-hidden="true"></span>
+      <span class="visually-hidden">Anterior</span>
+    </button>
+    <button class="carousel-control-next" type="button" data-bs-target="#portada" data-bs-slide="next">
+      <span class="carousel-control-next-icon" aria-hidden="true"></span>
+      <span class="visually-hidden">Siguiente</span>
+    </button>
+  </section>
+
+  <div class="container py-4">
+
+    <!-- ===================== ACCESOS A CATEGORÍAS ===================== -->
+    <section class="mb-5" aria-labelledby="titulo-categorias">
+      <h2 class="h4 fw-bold mb-3" id="titulo-categorias">Compra por categoría</h2>
+      <div class="row g-3" id="lista-categorias">
+        <div class="col-12 text-muted">Cargando categorías...</div>
+      </div>
+    </section>
+
+    <!-- ===================== PRODUCTOS DESTACADOS ===================== -->
+    <section class="mb-5" aria-labelledby="titulo-destacados">
+      <div class="d-flex justify-content-between align-items-end mb-3">
+        <h2 class="h4 fw-bold mb-0" id="titulo-destacados">Recién llegados</h2>
+        <a href="/catalogo/" class="fw-semibold">Ver todo el catálogo</a>
+      </div>
+      <div class="row g-3" id="lista-destacados">
+        <div class="col-12 text-center py-5">
+          <div class="spinner-border text-secondary" role="status"><span class="visually-hidden">Cargando...</span></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ===================== BENEFICIOS ===================== -->
+    <section class="bg-white border rounded p-4" aria-label="Beneficios">
+      <div class="row g-4">
+        <div class="col-md-4 beneficio">
+          <i class="bi bi-truck"></i>
+          <div><strong>Despacho a todo Chile</strong><br><span class="text-muted">Tu pedido sale al confirmar el pago.</span></div>
+        </div>
+        <div class="col-md-4 beneficio">
+          <i class="bi bi-shield-check"></i>
+          <div><strong>Garantía oficial</strong><br><span class="text-muted">Productos nuevos con garantía de fábrica.</span></div>
+        </div>
+        <div class="col-md-4 beneficio">
+          <i class="bi bi-lock"></i>
+          <div><strong>Compra segura</strong><br><span class="text-muted">Tu sesión está protegida con tokens JWT.</span></div>
+        </div>
+      </div>
+    </section>
+  </div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+  /* ------------------------------------------------------------------
+     Carga de categorías y productos destacados desde la API pública
+     (no requieren token).
+     ------------------------------------------------------------------ */
+  async function cargarCategoriasPortada() {
+    const contenedor = document.getElementById('lista-categorias');
+    const { ok, datos } = await apiFetch('/categorias/');
+    if (!ok || !datos.length) {
+      contenedor.innerHTML = '<div class="col-12 text-muted">Aún no hay categorías.</div>';
+      return;
+    }
+    contenedor.innerHTML = datos.map(categoria => `
+      <div class="col-12 col-sm-6 col-lg-4">
+        <a class="acceso-categoria" href="/catalogo/?categoria=${categoria.id}">
+          <i class="bi ${iconoCategoria(categoria.nombre)}"></i>
+          <span>
+            <strong>${escaparHTML(categoria.nombre)}</strong><br>
+            <small>${categoria.total_productos} producto${categoria.total_productos === 1 ? '' : 's'}</small>
+          </span>
+        </a>
+      </div>`).join('');
+  }
+
+  async function cargarDestacados() {
+    const contenedor = document.getElementById('lista-destacados');
+    const { ok, datos } = await apiFetch('/productos/?con_stock=true&ordering=-fecha_creacion');
+    if (!ok || !datos.length) {
+      contenedor.innerHTML = '<div class="col-12 text-muted">Aún no hay productos con stock.</div>';
+      return;
+    }
+    contenedor.innerHTML = datos.slice(0, 8).map(tarjetaProducto).join('');
+  }
+
+  document.addEventListener('DOMContentLoaded', () => {
+    cargarCategoriasPortada();
+    cargarDestacados();
+  });
+</script>
+{% endblock %}

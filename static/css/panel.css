@@ -1,0 +1,42 @@
+/* ==========================================================================
+   ESTILOS DEL PANEL DE ADMINISTRACIÓN
+   Se cargan solo en /panel/ junto con cuenta.css (que aporta los colores
+   de estado de las órdenes y el formato del código de orden).
+   ========================================================================== */
+
+/* Tarjetas de resumen del inventario y las órdenes */
+.tarjeta-resumen {
+  background: var(--superficie);
+  border: 1px solid var(--borde);
+  border-radius: 8px;
+  padding: 1rem 1.25rem;
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  height: 100%;
+}
+.tarjeta-resumen .bi { font-size: 2rem; color: var(--naranja); }
+.tarjeta-resumen .valor { font-size: 1.6rem; font-weight: 700; color: var(--texto); line-height: 1.1; }
+.tarjeta-resumen .etiqueta { color: var(--texto-suave); font-size: .9rem; }
+
+/* Pestañas y tablas */
+.pestanas-panel .nav-link { color: var(--texto); font-weight: 600; }
+.pestanas-panel .nav-link:hover { color: var(--enlace); }
+.pestanas-panel .nav-link.active { color: var(--texto); border-top: 3px solid var(--naranja); }
+.contenedor-tabla {
+  background: var(--superficie);
+  border: 1px solid var(--borde);
+  border-top: 0;
+  border-radius: 0 0 8px 8px;
+  padding: 1.25rem;
+}
+.tabla-panel th { background: var(--relleno); white-space: nowrap; }
+.tabla-panel td { vertical-align: middle; }
+.stock-bajo { color: #9A5B00; font-weight: 700; }
+.stock-cero { color: #B42318; font-weight: 700; }
+.fila-items td { background: var(--superficie-suave); }
+.tabla-panel .btn-link { color: var(--enlace); font-weight: 600; }
+
+/* "Marcar entregada" usa el mismo verde del stock */
+.btn-success { background: var(--verde-stock); border-color: var(--verde-stock); }
+.btn-success:hover, .btn-success:focus-visible { background: #24604A; border-color: #24604A; }

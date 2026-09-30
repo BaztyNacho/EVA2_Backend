@@ -1,0 +1,249 @@
+{% extends 'base.html' %}
+{% load static %}
+{% comment %}
+==========================================================================
+ MIS ÓRDENES ( /mis-ordenes/ )  -  PÁGINA PRIVADA (solo CLIENTE)
+ Endpoints usados:
+   GET  /api/mis-ordenes/?estado=...     historial (filtro django-filter)
+   POST /api/ordenes/{id}/pagar/         simulación de pago
+ Respuestas del pago:
+   200 -> la orden pasa a PAGADO y el stock se descuenta.
+   409 -> stock insuficiente: se muestra qué producto falló y la orden
+          sigue PENDIENTE (la transacción hizo ROLLBACK).
+ Si la URL trae ?orden=<id> (viene del checkout), esa orden se abre.
+==========================================================================
+{% endcomment %}
+
+{% block titulo %}Mis órdenes | Tienda de Hardware{% endblock %}
+
+{% block estilos %}
+  <link href="{% static 'css/cuenta.css' %}" rel="stylesheet">
+{% endblock %}
+
+{% block contenido %}
+  <div class="container py-4">
+    <nav aria-label="Ruta de navegación">
+      <ol class="breadcrumb mb-2">
+        <li class="breadcrumb-item"><a href="/">Inicio</a></li>
+        <li class="breadcrumb-item active" aria-current="page">Mis órdenes</li>
+      </ol>
+    </nav>
+    <h1 class="h3 fw-bold mb-3">Mis órdenes</h1>
+
+    <ul class="nav nav-pills pestanas-estado gap-2 mb-3" id="pestanas-estado">
+      <li class="nav-item"><button class="nav-link active" data-estado="">Todas</button></li>
+      <li class="nav-item"><button class="nav-link" data-estado="PENDIENTE">Pendientes</button></li>
+      <li class="nav-item"><button class="nav-link" data-estado="PAGADO">Pagadas</button></li>
+      <li class="nav-item"><button class="nav-link" data-estado="ENTREGADO">Entregadas</button></li>
+      <li class="nav-item"><button class="nav-link" data-estado="CANCELADO">Canceladas</button></li>
+    </ul>
+
+    <div class="accordion" id="lista-ordenes">
+      <div class="text-center py-5"><div class="spinner-border text-secondary" role="status"><span class="visually-hidden">Cargando...</span></div></div>
+    </div>
+  </div>
+
+  <!-- Modal de confirmación del pago (simulado) -->
+  <div class="modal fade" id="modal-pago" tabindex="-1" aria-labelledby="titulo-modal-pago" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h2 class="modal-title h5" id="titulo-modal-pago">Confirmar pago</h2>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+        </div>
+        <div class="modal-body">
+          <p class="mb-2">Vas a pagar la orden <span class="codigo-orden" id="pago-codigo"></span> por un total de:</p>
+          <p class="total-compra mb-3" id="pago-total"></p>
+          <p class="small text-muted mb-0">
+            Este pago es una simulación. Al confirmarlo se verifica el stock de todos
+            los productos y, si alcanza, se descuenta del catálogo.
+          </p>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Volver</button>
+          <button type="button" class="btn btn-cobre" id="confirmar-pago">Pagar ahora</button>
+        </div>
+      </div>
+    </div>
+  </div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+  /* Página privada: solo clientes autenticados */
+  const usuario = requerirSesion('CLIENTE');
+
+  const PASOS = ['PENDIENTE', 'PAGADO', 'ENTREGADO'];
+  const NOMBRE_PASO = { PENDIENTE: 'Pendiente', PAGADO: 'Pagado', ENTREGADO: 'Entregado' };
+  let estadoActual = '';
+  let ordenAbierta = new URLSearchParams(window.location.search).get('orden');
+  let ordenPorPagar = null;
+  const modalPago = new bootstrap.Modal(document.getElementById('modal-pago'));
+
+  const formatoFecha = new Intl.DateTimeFormat('es-CL', { dateStyle: 'medium', timeStyle: 'short' });
+  const codigoCorto = codigo => codigo.slice(0, 8).toUpperCase();
+
+  /* ==================================================================
+     CARGA DEL HISTORIAL: GET /api/mis-ordenes/?estado=<estado>
+     ================================================================== */
+  async function cargarOrdenes() {
+    const contenedor = document.getElementById('lista-ordenes');
+    const query = estadoActual ? `?estado=${estadoActual}` : '';
+    const { ok, datos } = await apiFetch(`/mis-ordenes/${query}`);
+    if (!ok) {
+      contenedor.innerHTML = '<div class="alert alert-danger">No se pudieron cargar tus órdenes.</div>';
+      return;
+    }
+    if (!datos.length) {
+      contenedor.innerHTML = `
+        <div class="estado-vacio">
+          <i class="bi bi-receipt"></i>
+          <p class="fw-semibold fs-5 mt-2 mb-1">${estadoActual ? 'No tienes órdenes en este estado' : 'Aún no tienes órdenes'}</p>
+          <p class="text-muted mb-4">Cuando confirmes una compra desde tu carro, aparecerá aquí.</p>
+          <a class="btn btn-cobre" href="/catalogo/">Ir al catálogo</a>
+        </div>`;
+      return;
+    }
+    contenedor.innerHTML = datos.map(tarjetaOrden).join('');
+
+    if (ordenAbierta) {
+      const elemento = document.getElementById(`orden-${ordenAbierta}`);
+      if (elemento) elemento.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+  }
+
+  /* ==================================================================
+     TARJETA DE ORDEN (ítem de acordeón de Bootstrap)
+     ================================================================== */
+  function tarjetaOrden(orden) {
+    const abierta = String(orden.id) === String(ordenAbierta);
+    return `
+      <div class="accordion-item" id="orden-${orden.id}">
+        <h2 class="accordion-header">
+          <button class="accordion-button ${abierta ? '' : 'collapsed'}" type="button" data-bs-toggle="collapse"
+                  data-bs-target="#detalle-orden-${orden.id}" aria-expanded="${abierta}" aria-controls="detalle-orden-${orden.id}">
+            <span class="cabecera-orden">
+              <span class="fw-semibold">Orden <span class="codigo-orden">#${codigoCorto(orden.codigo)}</span></span>
+              <span class="text-muted small">${formatoFecha.format(new Date(orden.fecha_creacion))}</span>
+              <span class="badge badge-estado-${orden.estado}">${escaparHTML(orden.estado_display)}</span>
+              <span class="total-orden">${precioCLP(orden.total)}</span>
+            </span>
+          </button>
+        </h2>
+        <div id="detalle-orden-${orden.id}" class="accordion-collapse collapse ${abierta ? 'show' : ''}" data-bs-parent="#lista-ordenes">
+          <div class="accordion-body">
+            ${lineaProgreso(orden)}
+            <div id="mensaje-orden-${orden.id}"></div>
+            <div class="table-responsive">
+              <table class="table align-middle bg-white mb-3">
+                <thead>
+                  <tr><th>Producto</th><th class="text-end">Precio unitario</th><th class="text-center">Cantidad</th><th class="text-end">Subtotal</th></tr>
+                </thead>
+                <tbody>
+                  ${orden.items.map(item => `
+                    <tr>
+                      <td>${escaparHTML(item.nombre_producto)}<br><span class="sku">SKU ${escaparHTML(item.sku)}</span></td>
+                      <td class="text-end">${precioCLP(item.precio_unitario)}</td>
+                      <td class="text-center">${item.cantidad}</td>
+                      <td class="text-end">${precioCLP(item.subtotal)}</td>
+                    </tr>`).join('')}
+                </tbody>
+                <tfoot>
+                  <tr><th colspan="3" class="text-end">Total</th><th class="text-end">${precioCLP(orden.total)}</th></tr>
+                </tfoot>
+              </table>
+            </div>
+            <div class="d-flex flex-wrap justify-content-between align-items-center gap-2">
+              <span class="small text-muted">Código de orden: <span class="codigo-orden">${escaparHTML(orden.codigo)}</span></span>
+              ${orden.estado === 'PENDIENTE'
+                ? `<button class="btn btn-cobre" type="button" data-pagar="${orden.id}"><i class="bi bi-credit-card me-1"></i>Pagar ahora</button>`
+                : ''}
+            </div>
+          </div>
+        </div>
+      </div>`;
+  }
+
+  /* Línea de progreso PENDIENTE -> PAGADO -> ENTREGADO, o aviso de
+     cancelación. Si la orden cancelada tenía fecha de pago, su stock
+     fue repuesto al catálogo. */
+  function lineaProgreso(orden) {
+    if (orden.estado === 'CANCELADO') {
+      return `
+        <div class="alert alert-secondary">
+          <i class="bi bi-x-circle me-1"></i>Esta orden fue cancelada.
+          ${orden.fecha_pago ? 'El stock de sus productos fue repuesto al catálogo.' : ''}
+        </div>`;
+    }
+    const indiceActual = PASOS.indexOf(orden.estado);
+    return `
+      <ol class="pasos-orden" aria-label="Estado de la orden">
+        ${PASOS.map((paso, indice) => `
+          <li class="paso-orden ${indice <= indiceActual ? 'completo' : ''}" ${indice === indiceActual ? 'aria-current="step"' : ''}>
+            ${NOMBRE_PASO[paso]}
+          </li>`).join('')}
+      </ol>
+      ${orden.fecha_pago ? `<p class="small text-muted">Pagada el ${formatoFecha.format(new Date(orden.fecha_pago))}</p>` : ''}`;
+  }
+
+  /* ==================================================================
+     PAGO: POST /api/ordenes/{id}/pagar/
+     ================================================================== */
+  function abrirModalPago(ordenId) {
+    const elemento = document.getElementById(`orden-${ordenId}`);
+    ordenPorPagar = ordenId;
+    document.getElementById('pago-codigo').textContent = elemento.querySelector('.codigo-orden').textContent;
+    document.getElementById('pago-total').textContent = elemento.querySelector('.total-orden').textContent;
+    modalPago.show();
+  }
+
+  document.getElementById('confirmar-pago').addEventListener('click', async evento => {
+    const boton = evento.currentTarget;
+    boton.disabled = true;
+    boton.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Procesando...';
+    const { ok, status, datos } = await apiFetch(`/ordenes/${ordenPorPagar}/pagar/`, { method: 'POST' });
+    modalPago.hide();
+    boton.disabled = false;
+    boton.textContent = 'Pagar ahora';
+    ordenAbierta = ordenPorPagar;
+
+    if (ok) {
+      mostrarToast('Pago confirmado. Tu orden está en preparación.', 'success');
+      await cargarOrdenes();
+      return;
+    }
+
+    // 409: stock insuficiente. Se explica dentro de la misma orden.
+    if (status === 409) {
+      const detalle = datos.productos.map(p => p.motivo
+        ? `<li><strong>${escaparHTML(p.producto)}</strong>: ${escaparHTML(p.motivo)}</li>`
+        : `<li><strong>${escaparHTML(p.producto)}</strong>: pediste ${p.solicitado}, quedan ${p.disponible}.</li>`).join('');
+      document.getElementById(`mensaje-orden-${ordenPorPagar}`).innerHTML = `
+        <div class="alert alert-danger" role="alert">
+          <p class="fw-semibold mb-1"><i class="bi bi-exclamation-octagon me-1"></i>Pago rechazado por stock insuficiente</p>
+          <ul class="mb-1">${detalle}</ul>
+          <p class="small mb-0">No se descontó nada y tu orden sigue pendiente.</p>
+        </div>`;
+      return;
+    }
+    mostrarToast((datos && datos.detail) || 'No se pudo procesar el pago.', 'danger');
+  });
+
+  document.getElementById('lista-ordenes').addEventListener('click', evento => {
+    const boton = evento.target.closest('[data-pagar]');
+    if (boton) abrirModalPago(boton.dataset.pagar);
+  });
+
+  /* Pestañas por estado (filtro ?estado= de django-filter) */
+  document.getElementById('pestanas-estado').addEventListener('click', evento => {
+    const pestana = evento.target.closest('[data-estado]');
+    if (!pestana) return;
+    document.querySelectorAll('#pestanas-estado .nav-link').forEach(p => p.classList.remove('active'));
+    pestana.classList.add('active');
+    estadoActual = pestana.dataset.estado;
+    cargarOrdenes();
+  });
+
+  if (usuario) document.addEventListener('DOMContentLoaded', cargarOrdenes);
+</script>
+{% endblock %}

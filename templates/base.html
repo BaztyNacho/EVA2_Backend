@@ -1,0 +1,174 @@
+{% load static %}
+{% comment %}
+==========================================================================
+ PLANTILLA BASE DE LA TIENDA (Bootstrap 5)
+ Estructura común a todas las páginas:
+   0. Barra de "Modo administrador" (solo visible para el rol
+      ADMINISTRADOR; tienda.js agrega la clase modo-admin al <body>).
+      Tiene accesos a la documentación de la API y al admin de Django;
+      el panel de la tienda está en el menú de la cuenta.
+   1. Franja superior con información para el cliente.
+   2. Barra principal: logo, buscador, cuenta y carro.
+   3. Barra de categorías (se carga desde /api/categorias/).
+   Los puntos 0 a 3 están dentro de {% block cabecera %}: el login y
+   el registro lo reemplazan por una cabecera mínima (solo el logo).
+   4. {% block contenido %}: contenido propio de cada página.
+   5. Footer con los datos del alumno.
+   6. Contenedor de notificaciones (toasts).
+   7. Mini-carro lateral (Offcanvas de Bootstrap): se abre al presionar
+      el ícono del carro; lo maneja tienda.js.
+   8. Aviso de expiración de sesión (modal con cuenta regresiva): lo
+      maneja sesion.js; solo actúa si hay una sesión iniciada.
+ Scripts: Bootstrap, api.js (sesión JWT), tienda.js (componentes) y
+ sesion.js (cierre por inactividad).
+ Cada página agrega su propio CSS en {% block estilos %} y su propio
+ JavaScript en {% block scripts %}.
+==========================================================================
+{% endcomment %}
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{% block titulo %}Tienda de Hardware{% endblock %}</title>
+
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;600;700&family=IBM+Plex+Mono:wght@500&display=swap" rel="stylesheet">
+  <link href="{% static 'css/tienda.css' %}" rel="stylesheet">
+  <link href="{% static 'css/imagenes.css' %}" rel="stylesheet">
+  <link href="{% static 'css/modo-admin.css' %}" rel="stylesheet">
+  <link href="{% static 'css/minicarro.css' %}" rel="stylesheet">
+  <link href="{% static 'css/sesion.css' %}" rel="stylesheet">
+  {% block estilos %}{% endblock %}
+</head>
+<body>
+
+  {% block cabecera %}
+  <!-- ===================== 0. BARRA MODO ADMINISTRADOR ===================== -->
+  <!-- Oculta por CSS; se muestra cuando <body> tiene la clase modo-admin.
+       Los enlaces a la documentación y al admin de Django solo aparecen
+       aquí, y además esas rutas están protegidas en el servidor. -->
+  <div class="barra-admin" role="status">
+    <div class="container d-flex flex-wrap justify-content-between align-items-center gap-2">
+      <span>
+        <i class="bi bi-shield-lock-fill me-1"></i><strong>Modo administrador</strong>
+        · Navegando como <strong id="barra-admin-usuario"></strong>. Esta cuenta no puede comprar.
+      </span>
+      <nav class="d-flex flex-wrap gap-3" aria-label="Herramientas de administración">
+        <a href="/api/docs/"><i class="bi bi-braces me-1"></i>Documentación API</a>
+      </nav>
+    </div>
+  </div>
+
+  <!-- ===================== 1. FRANJA SUPERIOR ===================== -->
+  <div class="franja-superior py-1">
+    <div class="container d-flex justify-content-between">
+      <span><i class="bi bi-truck me-1"></i>Despacho a todo Chile</span>
+      <span class="d-none d-sm-inline"><i class="bi bi-shield-check me-1"></i>Garantía oficial en todos los productos</span>
+    </div>
+  </div>
+
+  <!-- ===================== 2. BARRA PRINCIPAL ===================== -->
+  <header class="barra-principal py-3">
+    <div class="container">
+      <div class="row g-3 align-items-center">
+        <div class="col-7 col-lg-3 order-1">
+          <a class="marca" href="/"><i class="bi bi-cpu-fill me-1"></i>Tienda de Hardware</a>
+          <span class="insignia-admin">ADMIN</span>
+        </div>
+
+        <!-- Buscador: envía ?search= al catálogo (SearchFilter de DRF) -->
+        <div class="col-12 col-lg-6 order-3 order-lg-2">
+          <form class="buscador input-group" action="/catalogo/" method="get" role="search">
+            <input class="form-control" type="search" name="search" placeholder="Busca procesadores, tarjetas de video, memorias..." aria-label="Buscar productos" value="{{ request.GET.search }}">
+            <button class="btn" type="submit" aria-label="Buscar"><i class="bi bi-search"></i></button>
+          </form>
+        </div>
+
+        <div class="col-5 col-lg-3 order-2 order-lg-3 d-flex justify-content-end align-items-center gap-3 gap-md-4">
+          <!-- Zona de cuenta: la completa tienda.js según haya sesión y rol -->
+          <div id="zona-cuenta"></div>
+          <a class="accion-nav position-relative" id="boton-carro" href="/carro/" aria-label="Ver carro">
+            <i class="bi bi-cart3"></i>
+            <span class="badge rounded-pill badge-carro d-none" id="contador-carro">0</span>
+          </a>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <!-- ===================== 3. BARRA DE CATEGORÍAS ===================== -->
+  <nav class="barra-categorias" aria-label="Categorías">
+    <div class="container" id="menu-categorias">
+      <a href="/catalogo/"><i class="bi bi-grid me-1"></i>Todo el catálogo</a>
+    </div>
+  </nav>
+  {% endblock %}
+
+  <!-- ===================== 4. CONTENIDO DE CADA PÁGINA ===================== -->
+  <main>
+    {% block contenido %}{% endblock %}
+  </main>
+
+  <!-- ===================== 5. FOOTER CON DATOS DEL ALUMNO ===================== -->
+  {% include 'includes/footer.html' %}
+
+  <!-- ===================== 6. NOTIFICACIONES ===================== -->
+  <div class="toast-container position-fixed bottom-0 end-0 p-3" id="contenedor-toasts"></div>
+
+  <!-- ===================== 7. MINI-CARRO LATERAL ===================== -->
+  <!-- Panel que se desliza desde la derecha al presionar el ícono del
+       carro (solo clientes). Su contenido lo dibuja tienda.js con los
+       datos de GET /api/carro/. -->
+  <div class="offcanvas offcanvas-end mini-carro" tabindex="-1" id="mini-carro" aria-labelledby="titulo-mini-carro">
+    <div class="offcanvas-header">
+      <h2 class="offcanvas-title h5 mb-0" id="titulo-mini-carro"><i class="bi bi-cart3 me-2"></i>Tu carro</h2>
+      <button type="button" class="btn-close btn-close-white" data-bs-dismiss="offcanvas" aria-label="Cerrar carro"></button>
+    </div>
+    <div class="offcanvas-body" id="contenido-mini-carro"></div>
+    <div class="pie-mini-carro d-none" id="pie-mini-carro">
+      <div class="d-flex justify-content-between align-items-end mb-1">
+        <span class="fw-semibold">Subtotal</span>
+        <span class="total-mini" id="total-mini-carro"></span>
+      </div>
+      <p class="small text-muted mb-3">El precio se congela al confirmar la compra.</p>
+      <a class="btn btn-cobre btn-lg w-100 mb-2" href="/carro/"><i class="bi bi-credit-card me-1"></i>Ir a pagar</a>
+      <button type="button" class="btn btn-outline-secondary w-100" data-bs-dismiss="offcanvas">Seguir comprando</button>
+    </div>
+  </div>
+
+  <!-- ===================== 8. AVISO DE EXPIRACIÓN DE SESIÓN ===================== -->
+  <!-- data-bs-backdrop="static" y data-bs-keyboard="false": no se cierra
+       con un clic afuera ni con Esc, solo con sus dos botones. -->
+  <div class="modal fade" id="modal-sesion" data-bs-backdrop="static" data-bs-keyboard="false" tabindex="-1"
+       aria-labelledby="titulo-modal-sesion" aria-describedby="texto-modal-sesion">
+    <div class="modal-dialog modal-dialog-centered">
+      <div class="modal-content">
+        <div class="modal-header aviso-sesion-cabecera">
+          <h2 class="modal-title h5" id="titulo-modal-sesion"><i class="bi bi-hourglass-split me-2"></i>Tu sesión está por expirar</h2>
+        </div>
+        <div class="modal-body text-center">
+          <p id="texto-modal-sesion">Por seguridad, cerramos la sesión tras 5 minutos sin actividad. Se cerrará en:</p>
+          <div class="cuenta-regresiva" id="cuenta-regresiva-sesion" role="timer">1:00</div>
+          <div class="progress barra-sesion mt-3" role="presentation">
+            <div class="progress-bar" id="barra-sesion" style="width: 100%"></div>
+          </div>
+          <p class="small text-muted mt-3 mb-0">Si se cierra, tu carro queda guardado.</p>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-outline-secondary" id="boton-cerrar-sesion-aviso">Cerrar sesión</button>
+          <button type="button" class="btn btn-cobre" id="boton-seguir-conectado">Seguir conectado</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+  <script src="{% static 'js/api.js' %}"></script>
+  <script src="{% static 'js/tienda.js' %}"></script>
+  <script src="{% static 'js/sesion.js' %}"></script>
+  {% block scripts %}{% endblock %}
+</body>
+</html>

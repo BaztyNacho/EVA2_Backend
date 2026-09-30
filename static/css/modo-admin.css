@@ -1,0 +1,48 @@
+/* ==========================================================================
+   MODO ADMINISTRADOR
+   Detalles visuales que solo ve una cuenta con rol ADMINISTRADOR, para
+   que quede claro que no está navegando como cliente:
+   - Barra superior ámbar con franjas diagonales (estilo "cinta de
+     advertencia") con accesos al panel, la documentación y el admin.
+   - Insignia "ADMIN" junto al logo.
+   Ambos están ocultos por defecto y se muestran cuando tienda.js agrega
+   la clase modo-admin al <body>.
+   Contraste del texto carbón sobre ámbar: 8:1 (muy legible).
+   ========================================================================== */
+.barra-admin,
+.insignia-admin { display: none; }
+
+body.modo-admin .barra-admin { display: block; }
+/* display: table -> la insignia queda en su propia línea bajo el logo,
+   con el ancho justo de su texto */
+body.modo-admin .insignia-admin { display: table; }
+
+.barra-admin {
+  background: repeating-linear-gradient(
+    -45deg,
+    var(--ambar) 0 14px,
+    #D9913A 14px 28px
+  );
+  color: var(--carbon);
+  font-size: .88rem;
+  padding: .45rem 0;
+  border-bottom: 2px solid var(--carbon);
+}
+.barra-admin a {
+  color: var(--carbon);
+  font-weight: 700;
+  text-decoration: none;
+}
+.barra-admin a:hover, .barra-admin a:focus-visible { text-decoration: underline; }
+.barra-admin a:focus-visible { outline-color: var(--carbon); }
+
+.insignia-admin {
+  margin-top: .3rem;
+  padding: .1rem .45rem;
+  border-radius: 4px;
+  background: var(--ambar);
+  color: var(--carbon);
+  font-size: .7rem;
+  font-weight: 700;
+  letter-spacing: .06em;
+}

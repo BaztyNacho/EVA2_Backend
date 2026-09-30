@@ -1,0 +1,96 @@
+/* ==========================================================================
+   IMÁGENES DE PRODUCTOS Y DEL BANNER
+   Las fotos tienen tamaños y proporciones distintas. Para que todas se
+   vean ordenadas se usa la propiedad object-fit:
+   - PRODUCTOS -> object-fit: contain
+       La imagen se ajusta COMPLETA dentro de su recuadro, centrada y sin
+       deformarse. El espacio sobrante queda en blanco, igual que el
+       fondo típico de las fotos oficiales de producto.
+   - BANNER -> object-fit: cover
+       La imagen LLENA todo el banner; si su proporción no coincide, se
+       recortan los bordes y se mantiene el centro.
+   Se carga en base.html, así aplica en todas las páginas.
+   ========================================================================== */
+
+/* --------------------------------------------------------------------------
+   PRODUCTOS: tarjeta, detalle, carro, panel y vista previa del formulario
+   -------------------------------------------------------------------------- */
+.imagen-producto img,
+.detalle-imagen img,
+.icono-item img,
+.miniatura-panel img,
+.vista-previa img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  object-position: center;
+}
+
+/* El ícono de respaldo (producto sin foto) mantiene su color naranja al
+   pasar el mouse; sin esto, la regla general a:hover lo volvería negro. */
+.imagen-producto:hover,
+.icono-item:hover { color: var(--naranja); }
+
+/* Cuando hay foto, el recuadro pasa a fondo blanco con un poco de aire */
+.imagen-producto.con-imagen {
+  background: #fff;
+  padding: .75rem;
+  border-bottom: 1px solid var(--borde);
+}
+.detalle-imagen.con-imagen { background: #fff; padding: 2rem; }
+.icono-item.con-imagen { background: #fff; border: 1px solid var(--borde); padding: .3rem; }
+
+/* Miniatura en la tabla de productos del panel */
+.miniatura-panel {
+  width: 48px;
+  height: 48px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #fff;
+  border: 1px solid var(--borde);
+  border-radius: 4px;
+  padding: 2px;
+  font-size: 1.3rem;
+  color: var(--naranja);
+}
+
+/* Vista previa en el formulario del panel */
+.vista-previa {
+  width: 96px;
+  height: 96px;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #fff;
+  border: 1px dashed var(--borde);
+  border-radius: 6px;
+  padding: .25rem;
+  font-size: 2rem;
+  color: var(--texto-suave);
+}
+
+/* --------------------------------------------------------------------------
+   BANNER DE LA PORTADA
+   La foto va por detrás del texto y encima se aplica un degradado carbón
+   desde la izquierda, para que el texto se lea sobre cualquier imagen.
+   Si la foto no existe, el <img> se elimina (onerror en inicio.html) y
+   se ve el diseño de color sólido con ícono.
+   -------------------------------------------------------------------------- */
+.diapositiva .imagen-banner {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center;
+}
+.diapositiva.con-imagen::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(90deg, rgba(23, 19, 17, .9) 0%, rgba(23, 19, 17, .65) 45%, rgba(23, 19, 17, 0) 80%);
+}
+.diapositiva.con-imagen .icono-fondo { display: none; }
+.diapositiva .container { z-index: 2; }

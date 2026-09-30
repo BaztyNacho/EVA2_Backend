@@ -1,0 +1,25 @@
+{% extends 'base.html' %}
+{% comment %}
+==========================================================================
+ PÁGINA 404 PERSONALIZADA
+ La muestra la vista ruta_no_encontrada cuando el re_path comodín
+ captura una URL que no existe en el proyecto (ej: /HOLA).
+==========================================================================
+{% endcomment %}
+
+{% block titulo %}Página no encontrada | Tienda de Hardware{% endblock %}
+
+{% block contenido %}
+  <div class="container py-5 text-center">
+    <i class="bi bi-plug text-secondary" style="font-size: 5rem;" aria-hidden="true"></i>
+    <h1 class="fw-bold mt-3">Esta página no existe</h1>
+    <p class="text-muted mx-auto" style="max-width: 52ch;">
+      La dirección <code>{{ ruta }}</code> no corresponde a ninguna sección de la tienda.
+      Revisa que esté bien escrita o sigue comprando desde el catálogo.
+    </p>
+    <div class="d-flex gap-2 justify-content-center mt-4">
+      <a class="btn btn-cobre" href="/">Volver al inicio</a>
+      <a class="btn btn-outline-secondary" href="/catalogo/">Ver catálogo</a>
+    </div>
+  </div>
+{% endblock %}

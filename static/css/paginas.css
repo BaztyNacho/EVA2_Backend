@@ -1,0 +1,99 @@
+/* ==========================================================================
+   ESTILOS DEL CATÁLOGO Y DEL DETALLE DE PRODUCTO
+   Se cargan solo en esas páginas mediante {% block estilos %}.
+   Usan las variables de color definidas en tienda.css.
+   ========================================================================== */
+
+/* --------------------------------------------------------------------------
+   PANEL DE FILTROS (columna izquierda del catálogo)
+   -------------------------------------------------------------------------- */
+.panel-filtros {
+  background: var(--superficie);
+  border: 1px solid var(--borde);
+  border-radius: 6px;
+}
+.grupo-filtro {
+  padding: 1rem 1.25rem;
+  border-bottom: 1px solid var(--borde);
+}
+.grupo-filtro:last-child { border-bottom: 0; }
+.grupo-filtro h3 { font-size: 1rem; font-weight: 700; margin-bottom: .75rem; }
+.grupo-filtro .form-check { margin-bottom: .35rem; }
+
+/* --------------------------------------------------------------------------
+   BARRA DE RESULTADOS: cantidad, orden y filtros activos
+   -------------------------------------------------------------------------- */
+.chip-filtro {
+  display: inline-flex;
+  align-items: center;
+  gap: .4rem;
+  background: var(--hover-categoria);
+  color: var(--texto);
+  border: 1px solid var(--borde);
+  border-radius: 999px;
+  padding: .3rem .8rem;
+  font-size: .85rem;
+  font-weight: 600;
+}
+.chip-filtro .bi { color: var(--accion); }
+.chip-filtro:hover, .chip-filtro:focus-visible { border-color: var(--naranja); }
+
+/* Muestra la petición real a la API (útil para explicar django-filter) */
+.consulta-api {
+  font-family: 'IBM Plex Mono', Consolas, monospace;
+  font-size: .8rem;
+  color: var(--texto-suave);
+  background: var(--superficie);
+  border: 1px dashed var(--borde);
+  border-radius: 4px;
+  padding: .4rem .75rem;
+  overflow-x: auto;
+  white-space: nowrap;
+}
+
+/* Botón "Sin stock" deshabilitado: gris neutro en vez de transparente */
+.btn-cobre:disabled {
+  background: var(--relleno);
+  border-color: var(--relleno);
+  color: var(--texto-suave);
+  opacity: 1;
+}
+
+.estado-vacio {
+  background: var(--superficie);
+  border: 1px solid var(--borde);
+  border-radius: 6px;
+  padding: 3rem 1.5rem;
+  text-align: center;
+}
+.estado-vacio .bi { font-size: 3rem; color: var(--borde); }
+
+/* --------------------------------------------------------------------------
+   DETALLE DE PRODUCTO
+   -------------------------------------------------------------------------- */
+.detalle-imagen {
+  background: var(--superficie-suave);
+  border: 1px solid var(--borde);
+  border-radius: 8px;
+  aspect-ratio: 1 / 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 9rem;
+  color: var(--naranja);
+}
+.detalle-marca { font-weight: 600; color: var(--texto-suave); }
+.detalle-precio { font-size: 2.3rem; font-weight: 700; color: var(--texto); line-height: 1.1; }
+.caja-compra {
+  background: var(--superficie);
+  border: 1px solid var(--borde);
+  border-radius: 8px;
+  padding: 1.5rem;
+}
+.selector-cantidad { max-width: 150px; }
+.selector-cantidad input { text-align: center; }
+.ficha-tecnica th { width: 35%; background: var(--superficie-suave); font-weight: 600; }
+
+@media (max-width: 991.98px) {
+  .detalle-imagen { aspect-ratio: 16 / 9; font-size: 6rem; }
+}

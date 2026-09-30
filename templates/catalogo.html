@@ -1,0 +1,306 @@
+{% extends 'base.html' %}
+{% load static %}
+{% comment %}
+==========================================================================
+ CATÁLOGO CON FILTROS ( /catalogo/ )
+ Página pública. El panel izquierdo arma los parámetros que entiende el
+ ProductoFilter de django-filter (catalogo/filters.py) y la API:
+   categoria, categoria_nombre, marca, precio_min, precio_max,
+   con_stock, search (SearchFilter) y ordering (OrderingFilter).
+ Los filtros se guardan en la URL del navegador, así los enlaces del
+ carrusel, del menú de categorías y del buscador llegan ya filtrados.
+ En pantallas chicas el panel se abre como offcanvas de Bootstrap.
+==========================================================================
+{% endcomment %}
+
+{% block titulo %}Catálogo | Tienda de Hardware{% endblock %}
+
+{% block estilos %}
+  <link href="{% static 'css/paginas.css' %}" rel="stylesheet">
+{% endblock %}
+
+{% block contenido %}
+  <div class="container py-4">
+    <nav aria-label="Ruta de navegación">
+      <ol class="breadcrumb mb-2">
+        <li class="breadcrumb-item"><a href="/">Inicio</a></li>
+        <li class="breadcrumb-item active" aria-current="page">Catálogo</li>
+      </ol>
+    </nav>
+    <h1 class="h3 fw-bold mb-3" id="titulo-catalogo">Catálogo</h1>
+
+    <div class="row g-4">
+
+      <!-- ===================== PANEL DE FILTROS ===================== -->
+      <div class="col-lg-3">
+        <button class="btn btn-outline-secondary w-100 d-lg-none" type="button" data-bs-toggle="offcanvas" data-bs-target="#panel-filtros" aria-controls="panel-filtros">
+          <i class="bi bi-funnel me-1"></i>Filtrar productos
+        </button>
+
+        <div class="offcanvas-lg offcanvas-start" tabindex="-1" id="panel-filtros" aria-labelledby="titulo-filtros">
+          <div class="offcanvas-header">
+            <h2 class="offcanvas-title h5" id="titulo-filtros">Filtros</h2>
+            <button type="button" class="btn-close" data-bs-dismiss="offcanvas" data-bs-target="#panel-filtros" aria-label="Cerrar"></button>
+          </div>
+          <div class="offcanvas-body p-lg-0">
+            <div class="panel-filtros w-100">
+
+              <div class="grupo-filtro">
+                <h3>Categoría</h3>
+                <div id="filtro-categorias"><span class="text-muted small">Cargando...</span></div>
+              </div>
+
+              <div class="grupo-filtro">
+                <h3>Marca</h3>
+                <div id="filtro-marcas"><span class="text-muted small">Cargando...</span></div>
+              </div>
+
+              <div class="grupo-filtro">
+                <h3>Precio</h3>
+                <form id="formulario-precio" novalidate>
+                  <div class="row g-2">
+                    <div class="col-6">
+                      <label for="precio_min" class="form-label small mb-1">Desde</label>
+                      <input type="number" class="form-control form-control-sm" id="precio_min" min="0" step="1000" placeholder="$0">
+                    </div>
+                    <div class="col-6">
+                      <label for="precio_max" class="form-label small mb-1">Hasta</label>
+                      <input type="number" class="form-control form-control-sm" id="precio_max" min="0" step="1000" placeholder="Sin límite">
+                    </div>
+                  </div>
+                  <div class="invalid-feedback d-block small" id="error-precio"></div>
+                  <button class="btn btn-sm btn-placa w-100 mt-2" type="submit">Aplicar precio</button>
+                </form>
+              </div>
+
+              <div class="grupo-filtro">
+                <div class="form-check form-switch mb-0">
+                  <input class="form-check-input" type="checkbox" role="switch" id="con_stock">
+                  <label class="form-check-label" for="con_stock">Solo productos con stock</label>
+                </div>
+              </div>
+
+              <div class="grupo-filtro">
+                <button class="btn btn-sm btn-outline-secondary w-100" type="button" id="limpiar-filtros">Limpiar filtros</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ===================== RESULTADOS ===================== -->
+      <div class="col-lg-9">
+        <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-2">
+          <span class="fw-semibold" id="cantidad-resultados" aria-live="polite">Buscando productos...</span>
+          <div class="d-flex align-items-center gap-2">
+            <label for="ordering" class="small text-muted text-nowrap">Ordenar por</label>
+            <select class="form-select form-select-sm" id="ordering">
+              <option value="">Nombre (A-Z)</option>
+              <option value="precio">Precio: menor a mayor</option>
+              <option value="-precio">Precio: mayor a menor</option>
+              <option value="-fecha_creacion">Más nuevos</option>
+              <option value="-stock">Mayor stock</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="d-flex flex-wrap gap-2 mb-2" id="filtros-activos"></div>
+        <div class="consulta-api mb-3" id="consulta-api" title="Petición que se envía a la API"></div>
+
+        <div class="row g-3" id="grilla-catalogo"></div>
+      </div>
+    </div>
+  </div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+  /* ==================================================================
+     ESTADO DE LOS FILTROS
+     'filtros' es un objeto con los parámetros activos. Se lee desde la
+     URL al cargar y se vuelve a escribir en la URL en cada cambio.
+     ================================================================== */
+  const PARAMETROS = ['search', 'categoria', 'categoria_nombre', 'marca', 'precio_min', 'precio_max', 'con_stock', 'ordering'];
+  const filtros = {};
+  let categorias = [];
+
+  new URLSearchParams(window.location.search).forEach((valor, clave) => {
+    if (PARAMETROS.includes(clave) && valor) filtros[clave] = valor;
+  });
+
+  function construirQuery() {
+    const parametros = new URLSearchParams();
+    PARAMETROS.forEach(clave => { if (filtros[clave]) parametros.set(clave, filtros[clave]); });
+    const texto = parametros.toString();
+    return texto ? `?${texto}` : '';
+  }
+
+  function cambiarFiltro(clave, valor) {
+    if (valor) filtros[clave] = valor; else delete filtros[clave];
+    cargarProductos();
+  }
+
+  /* ==================================================================
+     CARGA DE PRODUCTOS: GET /api/productos/?<filtros>
+     ================================================================== */
+  async function cargarProductos() {
+    const query = construirQuery();
+    history.replaceState(null, '', window.location.pathname + query);
+    document.getElementById('consulta-api').textContent = `GET /api/productos/${query}`;
+    sincronizarControles();
+    mostrarFiltrosActivos();
+
+    const grilla = document.getElementById('grilla-catalogo');
+    const cantidad = document.getElementById('cantidad-resultados');
+    grilla.innerHTML = '<div class="col-12 text-center py-5"><div class="spinner-border text-secondary" role="status"><span class="visually-hidden">Cargando...</span></div></div>';
+
+    const { ok, datos } = await apiFetch(`/productos/${query}`);
+    if (!ok) {
+      cantidad.textContent = 'No se pudo cargar el catálogo';
+      grilla.innerHTML = '<div class="col-12"><div class="estado-vacio"><i class="bi bi-wifi-off"></i><p class="mt-2 mb-0">Revisa tu conexión e intenta de nuevo.</p></div></div>';
+      return;
+    }
+
+    cantidad.textContent = `${datos.length} producto${datos.length === 1 ? '' : 's'}`;
+    if (!datos.length) {
+      grilla.innerHTML = `
+        <div class="col-12">
+          <div class="estado-vacio">
+            <i class="bi bi-search"></i>
+            <p class="fw-semibold mt-2 mb-1">Ningún producto coincide con estos filtros</p>
+            <p class="text-muted mb-3">Quita alguno de los filtros activos para ver más resultados.</p>
+            <button class="btn btn-cobre" type="button" onclick="limpiarFiltros()">Limpiar filtros</button>
+          </div>
+        </div>`;
+      return;
+    }
+    grilla.innerHTML = datos.map(producto => tarjetaProducto(producto, 'col-6 col-md-4')).join('');
+  }
+
+  /* ==================================================================
+     OPCIONES DEL PANEL: categorías y marcas
+     - Categorías: GET /api/categorias/.
+     - Marcas: se obtienen de todos los productos (valores únicos).
+     - Si la URL trae categoria_nombre (enlaces del carrusel), se busca
+       la categoría correspondiente y se reemplaza por su id.
+     ================================================================== */
+  async function cargarOpcionesFiltros() {
+    const [respuestaCategorias, respuestaProductos] = await Promise.all([
+      apiFetch('/categorias/'),
+      apiFetch('/productos/'),
+    ]);
+
+    if (respuestaCategorias.ok) {
+      categorias = respuestaCategorias.datos;
+      if (filtros.categoria_nombre) {
+        const buscada = filtros.categoria_nombre.toLowerCase();
+        const coincidencia = categorias.find(c => c.nombre.toLowerCase().includes(buscada));
+        if (coincidencia) {
+          filtros.categoria = String(coincidencia.id);
+          delete filtros.categoria_nombre;
+        }
+      }
+      document.getElementById('filtro-categorias').innerHTML = opcionRadio('categoria', '', 'Todas') +
+        categorias.map(c => opcionRadio('categoria', c.id, `${c.nombre} (${c.total_productos})`)).join('');
+    }
+
+    if (respuestaProductos.ok) {
+      const marcas = [...new Set(respuestaProductos.datos.map(p => p.marca))].sort((a, b) => a.localeCompare(b));
+      document.getElementById('filtro-marcas').innerHTML = opcionRadio('marca', '', 'Todas') +
+        marcas.map(marca => opcionRadio('marca', marca, marca)).join('');
+    }
+
+    document.querySelectorAll('input[name="categoria"]').forEach(input =>
+      input.addEventListener('change', () => { delete filtros.categoria_nombre; cambiarFiltro('categoria', input.value); }));
+    document.querySelectorAll('input[name="marca"]').forEach(input =>
+      input.addEventListener('change', () => cambiarFiltro('marca', input.value)));
+  }
+
+  function opcionRadio(nombre, valor, etiqueta) {
+    const id = `${nombre}-${String(valor || 'todas').replace(/\W/g, '')}`;
+    return `
+      <div class="form-check">
+        <input class="form-check-input" type="radio" name="${nombre}" id="${id}" value="${escaparHTML(String(valor))}">
+        <label class="form-check-label" for="${id}">${escaparHTML(etiqueta)}</label>
+      </div>`;
+  }
+
+  /* Deja los controles del panel igual que el estado de 'filtros'. */
+  function sincronizarControles() {
+    document.querySelectorAll('input[name="categoria"]').forEach(i => { i.checked = i.value === (filtros.categoria || ''); });
+    document.querySelectorAll('input[name="marca"]').forEach(i => { i.checked = i.value === (filtros.marca || ''); });
+    document.getElementById('precio_min').value = filtros.precio_min || '';
+    document.getElementById('precio_max').value = filtros.precio_max || '';
+    document.getElementById('con_stock').checked = filtros.con_stock === 'true';
+    document.getElementById('ordering').value = filtros.ordering || '';
+
+    const categoria = categorias.find(c => String(c.id) === filtros.categoria);
+    document.getElementById('titulo-catalogo').textContent =
+      filtros.search ? `Resultados para "${filtros.search}"` : categoria ? categoria.nombre : 'Catálogo';
+  }
+
+  /* ==================================================================
+     CHIPS DE FILTROS ACTIVOS (cada uno se quita con su botón ×)
+     ================================================================== */
+  function mostrarFiltrosActivos() {
+    const categoria = categorias.find(c => String(c.id) === filtros.categoria);
+    const etiquetas = {
+      search: filtros.search && `Búsqueda: ${filtros.search}`,
+      categoria: filtros.categoria && (categoria ? categoria.nombre : `Categoría ${filtros.categoria}`),
+      categoria_nombre: filtros.categoria_nombre && `Categoría: ${filtros.categoria_nombre}`,
+      marca: filtros.marca && `Marca: ${filtros.marca}`,
+      precio_min: filtros.precio_min && `Desde ${precioCLP(filtros.precio_min)}`,
+      precio_max: filtros.precio_max && `Hasta ${precioCLP(filtros.precio_max)}`,
+      con_stock: filtros.con_stock && 'Solo con stock',
+    };
+    document.getElementById('filtros-activos').innerHTML = Object.entries(etiquetas)
+      .filter(([, texto]) => texto)
+      .map(([clave, texto]) => `
+        <button class="chip-filtro" type="button" data-quitar="${clave}" aria-label="Quitar filtro ${escaparHTML(texto)}">
+          ${escaparHTML(texto)} <i class="bi bi-x-lg"></i>
+        </button>`).join('');
+  }
+
+  function limpiarFiltros() {
+    PARAMETROS.forEach(clave => { if (clave !== 'ordering') delete filtros[clave]; });
+    document.querySelector('.buscador input[name="search"]').value = '';
+    cargarProductos();
+  }
+
+  /* ==================================================================
+     EVENTOS DEL PANEL
+     ================================================================== */
+  document.getElementById('filtros-activos').addEventListener('click', evento => {
+    const chip = evento.target.closest('[data-quitar]');
+    if (!chip) return;
+    if (chip.dataset.quitar === 'search') document.querySelector('.buscador input[name="search"]').value = '';
+    cambiarFiltro(chip.dataset.quitar, '');
+  });
+
+  document.getElementById('formulario-precio').addEventListener('submit', evento => {
+    evento.preventDefault();
+    const minimo = document.getElementById('precio_min').value;
+    const maximo = document.getElementById('precio_max').value;
+    const error = document.getElementById('error-precio');
+    if (minimo && maximo && Number(minimo) > Number(maximo)) {
+      error.textContent = 'El precio "Desde" no puede ser mayor que "Hasta".';
+      return;
+    }
+    error.textContent = '';
+    if (minimo) filtros.precio_min = minimo; else delete filtros.precio_min;
+    if (maximo) filtros.precio_max = maximo; else delete filtros.precio_max;
+    cargarProductos();
+  });
+
+  document.getElementById('con_stock').addEventListener('change', evento =>
+    cambiarFiltro('con_stock', evento.target.checked ? 'true' : ''));
+  document.getElementById('ordering').addEventListener('change', evento =>
+    cambiarFiltro('ordering', evento.target.value));
+  document.getElementById('limpiar-filtros').addEventListener('click', limpiarFiltros);
+
+  document.addEventListener('DOMContentLoaded', async () => {
+    await cargarOpcionesFiltros();
+    cargarProductos();
+  });
+</script>
+{% endblock %}

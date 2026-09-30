@@ -1,0 +1,13 @@
+{% extends 'drf_spectacular/swagger_ui.html' %}
+{% comment %}
+==========================================================================
+ SWAGGER UI CON FOOTER
+ Extiende la plantilla original de drf-spectacular y agrega el footer
+ con los datos del alumno debajo de la documentación ({{ block.super }}
+ conserva todo el contenido original de Swagger).
+==========================================================================
+{% endcomment %}
+{% block body %}
+  {{ block.super }}
+  {% include 'includes/footer.html' %}
+{% endblock %}

@@ -1,0 +1,28 @@
+/* ==========================================================================
+   AVISO DE EXPIRACIÓN DE SESIÓN
+   Modal con cuenta regresiva que aparece tras 4 minutos sin actividad.
+   La barra se vacía durante el último minuto antes del cierre.
+   ========================================================================== */
+.aviso-sesion-cabecera {
+  background: var(--carbon);
+  color: #fff;
+  border-bottom: 3px solid var(--ambar);
+}
+.aviso-sesion-cabecera .bi { color: var(--ambar); }
+
+.cuenta-regresiva {
+  font-family: 'IBM Plex Mono', Consolas, monospace;
+  font-size: 2.6rem;
+  font-weight: 500;
+  color: var(--accion);
+  line-height: 1;
+}
+
+.barra-sesion { height: 8px; background: var(--relleno); }
+.barra-sesion .progress-bar {
+  background: var(--naranja);
+  transition: width 1s linear;
+}
+@media (prefers-reduced-motion: reduce) {
+  .barra-sesion .progress-bar { transition: none; }
+}

@@ -1,0 +1,132 @@
+{% extends 'base.html' %}
+{% load static %}
+{% comment %}
+==========================================================================
+ REGISTRO DE VENTAS ( /ventas/ )  -  PÁGINA PRIVADA (solo ADMINISTRADOR)
+ Dashboard con indicadores, gráficos y tablas del desempeño de la tienda.
+ Todos los datos vienen de UNA petición: GET /api/reportes/ventas/?dias=N
+ (ordenes/reportes.py), que calcula todo con consultas de agregación en
+ PostgreSQL. Los gráficos se dibujan con Chart.js y la lógica está en
+ static/js/ventas.js.
+==========================================================================
+{% endcomment %}
+
+{% block titulo %}Registro de ventas | Tienda de Hardware{% endblock %}
+
+{% block estilos %}
+  <link href="{% static 'css/cuenta.css' %}" rel="stylesheet">
+  <link href="{% static 'css/panel.css' %}" rel="stylesheet">
+  <link href="{% static 'css/ventas.css' %}" rel="stylesheet">
+{% endblock %}
+
+{% block contenido %}
+  <div class="container py-4">
+    <nav aria-label="Ruta de navegación">
+      <ol class="breadcrumb mb-2">
+        <li class="breadcrumb-item"><a href="/">Inicio</a></li>
+        <li class="breadcrumb-item active" aria-current="page">Registro de ventas</li>
+      </ol>
+    </nav>
+
+    <!-- ===================== TÍTULO Y PERÍODO ===================== -->
+    <div class="d-flex flex-wrap justify-content-between align-items-end gap-3 mb-3">
+      <div>
+        <h1 class="h3 fw-bold mb-1">Registro de ventas</h1>
+        <p class="text-muted mb-0" id="texto-periodo">Cargando período...</p>
+      </div>
+      <div class="btn-group selector-periodo" role="group" aria-label="Período del reporte">
+        <button type="button" class="btn btn-outline-secondary" data-dias="7">7 días</button>
+        <button type="button" class="btn btn-outline-secondary active" data-dias="30">30 días</button>
+        <button type="button" class="btn btn-outline-secondary" data-dias="90">90 días</button>
+        <button type="button" class="btn btn-outline-secondary" data-dias="0">Todo</button>
+      </div>
+    </div>
+
+    <p class="aviso-datos-demo px-3 py-2 mb-4 d-none" id="aviso-demo">
+      <i class="bi bi-info-circle me-1"></i>El reporte incluye ventas de demostración (clientes <code>demo_</code>),
+      generadas con el comando <code>generar_ventas_demo</code>.
+    </p>
+
+    <!-- ===================== INDICADORES ===================== -->
+    <div class="row row-cols-1 row-cols-sm-2 row-cols-lg-3 g-3 mb-4" id="indicadores"></div>
+
+    <!-- ===================== GRÁFICOS ===================== -->
+    <div class="row g-3 mb-3">
+      <div class="col-lg-8">
+        <section class="bloque-dashboard" aria-labelledby="titulo-grafico-dias">
+          <h2 id="titulo-grafico-dias">Ingresos por día <span class="subtitulo">(ventas pagadas y entregadas)</span></h2>
+          <div class="contenedor-grafico alto"><canvas id="grafico-dias" role="img" aria-label="Gráfico de ingresos por día"></canvas></div>
+        </section>
+      </div>
+      <div class="col-lg-4">
+        <section class="bloque-dashboard" aria-labelledby="titulo-grafico-categorias">
+          <h2 id="titulo-grafico-categorias">Ingresos por categoría</h2>
+          <div class="contenedor-grafico alto"><canvas id="grafico-categorias" role="img" aria-label="Gráfico de ingresos por categoría"></canvas></div>
+        </section>
+      </div>
+    </div>
+
+    <div class="row g-3 mb-3">
+      <div class="col-lg-5">
+        <section class="bloque-dashboard" aria-labelledby="titulo-grafico-top">
+          <h2 id="titulo-grafico-top">Top 5 productos <span class="subtitulo">(unidades vendidas)</span></h2>
+          <div class="contenedor-grafico"><canvas id="grafico-top" role="img" aria-label="Gráfico de los productos más vendidos"></canvas></div>
+        </section>
+      </div>
+      <div class="col-lg-4">
+        <section class="bloque-dashboard" aria-labelledby="titulo-grafico-marcas">
+          <h2 id="titulo-grafico-marcas">Ingresos por marca</h2>
+          <div class="contenedor-grafico"><canvas id="grafico-marcas" role="img" aria-label="Gráfico de ingresos por marca"></canvas></div>
+        </section>
+      </div>
+      <div class="col-lg-3">
+        <section class="bloque-dashboard" aria-labelledby="titulo-grafico-estados">
+          <h2 id="titulo-grafico-estados">Órdenes por estado</h2>
+          <div class="contenedor-grafico"><canvas id="grafico-estados" role="img" aria-label="Gráfico de órdenes por estado"></canvas></div>
+        </section>
+      </div>
+    </div>
+
+    <!-- ===================== TABLAS ===================== -->
+    <div class="row g-3">
+      <div class="col-lg-6">
+        <section class="bloque-dashboard" aria-labelledby="titulo-clientes">
+          <h2 id="titulo-clientes">Mejores clientes</h2>
+          <div class="table-responsive">
+            <table class="table tabla-panel mb-0">
+              <thead><tr><th>Cliente</th><th class="text-end">Compras</th><th class="text-end">Total</th></tr></thead>
+              <tbody id="tabla-clientes"></tbody>
+            </table>
+          </div>
+        </section>
+      </div>
+      <div class="col-lg-6">
+        <section class="bloque-dashboard" aria-labelledby="titulo-stock">
+          <h2 id="titulo-stock">Stock crítico <span class="subtitulo">(5 o menos y con ventas)</span></h2>
+          <div class="table-responsive">
+            <table class="table tabla-panel mb-0">
+              <thead><tr><th>Producto</th><th class="text-end">Vendidas</th><th class="text-end">Stock</th></tr></thead>
+              <tbody id="tabla-stock"></tbody>
+            </table>
+          </div>
+        </section>
+      </div>
+      <div class="col-12">
+        <section class="bloque-dashboard" aria-labelledby="titulo-ultimas">
+          <h2 id="titulo-ultimas">Últimas ventas</h2>
+          <div class="table-responsive">
+            <table class="table tabla-panel mb-0">
+              <thead><tr><th>Orden</th><th>Fecha de pago</th><th>Cliente</th><th>Estado</th><th class="text-end">Total</th></tr></thead>
+              <tbody id="tabla-ultimas"></tbody>
+            </table>
+          </div>
+        </section>
+      </div>
+    </div>
+  </div>
+{% endblock %}
+
+{% block scripts %}
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.js"></script>
+  <script src="{% static 'js/ventas.js' %}"></script>
+{% endblock %}

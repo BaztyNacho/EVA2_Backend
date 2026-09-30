@@ -1,0 +1,51 @@
+/* ==========================================================================
+   ESTILOS DEL REGISTRO DE VENTAS (dashboard del administrador)
+   Se cargan solo en /ventas/, junto con cuenta.css (colores de estado)
+   y panel.css (tablas del panel). Usan las variables de tienda.css.
+   ========================================================================== */
+
+/* Selector de período */
+.selector-periodo .btn { font-weight: 600; }
+.selector-periodo .btn.active {
+  background: var(--carbon);
+  border-color: var(--carbon);
+  color: #fff;
+}
+
+/* Tarjetas de indicadores */
+.indicador {
+  background: var(--superficie);
+  border: 1px solid var(--borde);
+  border-radius: 8px;
+  padding: 1rem 1.1rem;
+  height: 100%;
+}
+.indicador .etiqueta { color: var(--texto-suave); font-size: .85rem; font-weight: 600; }
+.indicador .valor { font-size: 1.55rem; font-weight: 700; color: var(--texto); line-height: 1.2; margin: .25rem 0; }
+.indicador .bi-titulo { color: var(--naranja); margin-right: .3rem; }
+.variacion { font-size: .8rem; font-weight: 600; }
+.variacion.sube { color: var(--verde-stock); }
+.variacion.baja { color: #B42318; }
+.variacion.neutra { color: var(--texto-suave); }
+
+/* Tarjetas que contienen gráficos o tablas */
+.bloque-dashboard {
+  background: var(--superficie);
+  border: 1px solid var(--borde);
+  border-radius: 8px;
+  padding: 1.25rem;
+  height: 100%;
+}
+.bloque-dashboard h2 { font-size: 1.05rem; font-weight: 700; margin-bottom: 1rem; }
+.bloque-dashboard .subtitulo { color: var(--texto-suave); font-size: .85rem; font-weight: 400; }
+
+/* Alto fijo para cada gráfico (Chart.js se adapta al contenedor) */
+.contenedor-grafico { position: relative; height: 280px; }
+.contenedor-grafico.alto { height: 320px; }
+
+.aviso-datos-demo {
+  background: var(--hover-categoria);
+  border: 1px solid var(--borde);
+  border-radius: 6px;
+  font-size: .85rem;
+}

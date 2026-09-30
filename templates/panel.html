@@ -1,0 +1,250 @@
+{% extends 'base.html' %}
+{% load static %}
+{% comment %}
+==========================================================================
+ PANEL DE ADMINISTRACIÓN ( /panel/ )  -  PÁGINA PRIVADA (solo ADMINISTRADOR)
+ Toda la lógica está en static/js/panel.js. Endpoints usados (todos con
+ el permiso EsAdministrador o EsAdministradorOSoloLectura en la API):
+   Productos:  GET/POST /api/productos/   PUT/DELETE /api/productos/{id}/
+               (con foto: se envían como multipart/form-data)
+   Categorías: GET/POST /api/categorias/  PUT/DELETE /api/categorias/{id}/
+   Órdenes:    GET /api/ordenes/?estado=&usuario=
+               PATCH /api/ordenes/{id}/estado/
+==========================================================================
+{% endcomment %}
+
+{% block titulo %}Panel de administración | Tienda de Hardware{% endblock %}
+
+{% block estilos %}
+  <link href="{% static 'css/cuenta.css' %}" rel="stylesheet">
+  <link href="{% static 'css/panel.css' %}" rel="stylesheet">
+{% endblock %}
+
+{% block contenido %}
+  <div class="container py-4">
+    <nav aria-label="Ruta de navegación">
+      <ol class="breadcrumb mb-2">
+        <li class="breadcrumb-item"><a href="/">Inicio</a></li>
+        <li class="breadcrumb-item active" aria-current="page">Panel de administración</li>
+      </ol>
+    </nav>
+    <h1 class="h3 fw-bold mb-3">Panel de administración</h1>
+
+    <!-- ===================== RESUMEN ===================== -->
+    <div class="row g-3 mb-4">
+      <div class="col-6 col-lg-3">
+        <div class="tarjeta-resumen"><i class="bi bi-box-seam"></i><div><div class="valor" id="resumen-productos">-</div><div class="etiqueta">Productos</div></div></div>
+      </div>
+      <div class="col-6 col-lg-3">
+        <div class="tarjeta-resumen"><i class="bi bi-exclamation-triangle"></i><div><div class="valor" id="resumen-stock-bajo">-</div><div class="etiqueta">Con stock bajo (5 o menos)</div></div></div>
+      </div>
+      <div class="col-6 col-lg-3">
+        <div class="tarjeta-resumen"><i class="bi bi-hourglass-split"></i><div><div class="valor" id="resumen-pendientes">-</div><div class="etiqueta">Órdenes pendientes de pago</div></div></div>
+      </div>
+      <div class="col-6 col-lg-3">
+        <div class="tarjeta-resumen"><i class="bi bi-truck"></i><div><div class="valor" id="resumen-por-entregar">-</div><div class="etiqueta">Pagadas por entregar</div></div></div>
+      </div>
+    </div>
+
+    <!-- ===================== PESTAÑAS ===================== -->
+    <ul class="nav nav-tabs pestanas-panel" role="tablist">
+      <li class="nav-item" role="presentation">
+        <button class="nav-link active" data-bs-toggle="tab" data-bs-target="#pestana-productos" type="button" role="tab">
+          <i class="bi bi-box-seam me-1"></i>Productos
+        </button>
+      </li>
+      <li class="nav-item" role="presentation">
+        <button class="nav-link" data-bs-toggle="tab" data-bs-target="#pestana-categorias" type="button" role="tab">
+          <i class="bi bi-tags me-1"></i>Categorías
+        </button>
+      </li>
+      <li class="nav-item" role="presentation">
+        <button class="nav-link" data-bs-toggle="tab" data-bs-target="#pestana-ordenes" type="button" role="tab">
+          <i class="bi bi-receipt me-1"></i>Órdenes
+        </button>
+      </li>
+    </ul>
+
+    <div class="tab-content">
+      <!-- ---------- PRODUCTOS ---------- -->
+      <div class="tab-pane fade show active contenedor-tabla" id="pestana-productos" role="tabpanel">
+        <div class="d-flex flex-wrap justify-content-between gap-2 mb-3">
+          <form class="input-group" style="max-width: 360px;" id="formulario-busqueda-productos" role="search">
+            <input type="search" class="form-control" id="busqueda-productos" placeholder="Buscar por nombre, marca o SKU" aria-label="Buscar productos">
+            <button class="btn btn-outline-secondary" type="submit" aria-label="Buscar"><i class="bi bi-search"></i></button>
+          </form>
+          <button class="btn btn-cobre" type="button" id="nuevo-producto"><i class="bi bi-plus-lg me-1"></i>Nuevo producto</button>
+        </div>
+        <div class="table-responsive">
+          <table class="table tabla-panel mb-0">
+            <thead><tr><th>Foto</th><th>Producto</th><th>Marca</th><th>SKU</th><th>Categoría</th><th class="text-end">Precio</th><th class="text-end">Stock</th><th class="text-end">Acciones</th></tr></thead>
+            <tbody id="tabla-productos"></tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- ---------- CATEGORÍAS ---------- -->
+      <div class="tab-pane fade contenedor-tabla" id="pestana-categorias" role="tabpanel">
+        <div class="d-flex justify-content-end mb-3">
+          <button class="btn btn-cobre" type="button" id="nueva-categoria"><i class="bi bi-plus-lg me-1"></i>Nueva categoría</button>
+        </div>
+        <div class="table-responsive">
+          <table class="table tabla-panel mb-0">
+            <thead><tr><th>Nombre</th><th>Descripción</th><th class="text-end">Productos</th><th class="text-end">Acciones</th></tr></thead>
+            <tbody id="tabla-categorias"></tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- ---------- ÓRDENES ---------- -->
+      <div class="tab-pane fade contenedor-tabla" id="pestana-ordenes" role="tabpanel">
+        <form class="row g-2 align-items-end mb-3" id="formulario-filtro-ordenes">
+          <div class="col-sm-4 col-lg-3">
+            <label for="filtro-estado" class="form-label small mb-1">Estado</label>
+            <select class="form-select" id="filtro-estado">
+              <option value="">Todos</option>
+              <option value="PENDIENTE">Pendiente de pago</option>
+              <option value="PAGADO">Pagado</option>
+              <option value="ENTREGADO">Entregado</option>
+              <option value="CANCELADO">Cancelado</option>
+            </select>
+          </div>
+          <div class="col-sm-5 col-lg-3">
+            <label for="filtro-usuario" class="form-label small mb-1">Cliente (usuario)</label>
+            <input type="text" class="form-control" id="filtro-usuario" placeholder="Ej: baztynacho">
+          </div>
+          <div class="col-sm-3 col-lg-2">
+            <button class="btn btn-placa w-100" type="submit">Filtrar</button>
+          </div>
+        </form>
+        <div id="mensaje-ordenes"></div>
+        <div class="table-responsive">
+          <table class="table tabla-panel mb-0">
+            <thead><tr><th>Orden</th><th>Cliente</th><th>Fecha</th><th class="text-end">Total</th><th>Estado</th><th class="text-end">Acciones</th></tr></thead>
+            <tbody id="tabla-ordenes"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===================== MODAL: PRODUCTO ===================== -->
+  <div class="modal fade" id="modal-producto" tabindex="-1" aria-labelledby="titulo-modal-producto" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-centered">
+      <form class="modal-content" id="formulario-producto" novalidate>
+        <div class="modal-header">
+          <h2 class="modal-title h5" id="titulo-modal-producto">Nuevo producto</h2>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+        </div>
+        <div class="modal-body">
+          <div class="alert alert-danger d-none" id="error-producto"></div>
+          <div class="row g-3">
+            <div class="col-md-8">
+              <label for="p-nombre" class="form-label">Nombre</label>
+              <input type="text" class="form-control" id="p-nombre" required>
+              <div class="invalid-feedback"></div>
+            </div>
+            <div class="col-md-4">
+              <label for="p-marca" class="form-label">Marca</label>
+              <input type="text" class="form-control" id="p-marca" required>
+              <div class="invalid-feedback"></div>
+            </div>
+            <div class="col-md-4">
+              <label for="p-sku" class="form-label">Código SKU</label>
+              <input type="text" class="form-control" id="p-sku" required>
+              <div class="invalid-feedback"></div>
+            </div>
+            <div class="col-md-4">
+              <label for="p-precio" class="form-label">Precio (CLP)</label>
+              <input type="number" class="form-control" id="p-precio" min="1" required>
+              <div class="invalid-feedback"></div>
+            </div>
+            <div class="col-md-4">
+              <label for="p-stock" class="form-label">Stock</label>
+              <input type="number" class="form-control" id="p-stock" min="0" required>
+              <div class="invalid-feedback"></div>
+            </div>
+            <div class="col-12">
+              <label for="p-categoria" class="form-label">Categoría</label>
+              <select class="form-select" id="p-categoria" required></select>
+              <div class="invalid-feedback"></div>
+            </div>
+            <div class="col-12">
+              <label for="p-descripcion" class="form-label">Descripción</label>
+              <textarea class="form-control" id="p-descripcion" rows="3"></textarea>
+              <div class="invalid-feedback"></div>
+            </div>
+            <div class="col-12">
+              <label for="p-imagen" class="form-label">Imagen</label>
+              <div class="d-flex gap-3 align-items-start">
+                <div class="vista-previa" id="vista-previa-imagen"><i class="bi bi-image" aria-hidden="true"></i></div>
+                <div class="flex-grow-1">
+                  <input type="file" class="form-control" id="p-imagen" accept="image/jpeg,image/png,image/webp">
+                  <div class="form-text">JPG, PNG o WebP, máximo 2 MB. Se muestra completa y centrada en la tienda.</div>
+                  <div class="invalid-feedback"></div>
+                  <div class="form-check mt-2 d-none" id="grupo-quitar-imagen">
+                    <input class="form-check-input" type="checkbox" id="p-quitar_imagen">
+                    <label class="form-check-label" for="p-quitar_imagen">Quitar la imagen actual</label>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancelar</button>
+          <button type="submit" class="btn btn-cobre" id="guardar-producto">Guardar producto</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- ===================== MODAL: CATEGORÍA ===================== -->
+  <div class="modal fade" id="modal-categoria" tabindex="-1" aria-labelledby="titulo-modal-categoria" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+      <form class="modal-content" id="formulario-categoria" novalidate>
+        <div class="modal-header">
+          <h2 class="modal-title h5" id="titulo-modal-categoria">Nueva categoría</h2>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+        </div>
+        <div class="modal-body">
+          <div class="mb-3">
+            <label for="c-nombre" class="form-label">Nombre</label>
+            <input type="text" class="form-control" id="c-nombre" required>
+            <div class="invalid-feedback"></div>
+          </div>
+          <div>
+            <label for="c-descripcion" class="form-label">Descripción</label>
+            <textarea class="form-control" id="c-descripcion" rows="2"></textarea>
+            <div class="invalid-feedback"></div>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancelar</button>
+          <button type="submit" class="btn btn-cobre">Guardar categoría</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- ===================== MODAL: CONFIRMACIÓN GENÉRICA ===================== -->
+  <div class="modal fade" id="modal-confirmar" tabindex="-1" aria-labelledby="titulo-modal-confirmar" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h2 class="modal-title h5" id="titulo-modal-confirmar"></h2>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+        </div>
+        <div class="modal-body" id="mensaje-modal-confirmar"></div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Volver</button>
+          <button type="button" class="btn" id="boton-confirmar"></button>
+        </div>
+      </div>
+    </div>
+  </div>
+{% endblock %}
+
+{% block scripts %}
+  <script src="{% static 'js/panel.js' %}"></script>
+{% endblock %}

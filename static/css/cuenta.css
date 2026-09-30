@@ -1,0 +1,92 @@
+/* ==========================================================================
+   ESTILOS DEL CARRO Y DE MIS ÓRDENES
+   Se cargan solo en esas páginas mediante {% block estilos %}.
+   Usan las variables de color definidas en tienda.css.
+   ========================================================================== */
+
+/* --------------------------------------------------------------------------
+   CARRO: filas de productos y resumen
+   -------------------------------------------------------------------------- */
+.lista-carro {
+  background: var(--superficie);
+  border: 1px solid var(--borde);
+  border-radius: 8px;
+}
+.item-carro {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 1rem;
+  padding: 1rem 1.25rem;
+  border-bottom: 1px solid var(--borde);
+}
+.item-carro:last-child { border-bottom: 0; }
+.icono-item {
+  width: 72px;
+  height: 72px;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--superficie-suave);
+  border-radius: 6px;
+  font-size: 2rem;
+  color: var(--naranja);
+  text-decoration: none;
+}
+.datos-item { flex: 1 1 220px; min-width: 0; }
+.subtotal-item { width: 110px; text-align: right; font-weight: 700; color: var(--texto); }
+.selector-cantidad { max-width: 130px; }
+.selector-cantidad input { text-align: center; }
+
+.resumen-compra {
+  background: var(--superficie);
+  border: 1px solid var(--borde);
+  border-radius: 8px;
+  padding: 1.5rem;
+  position: sticky;
+  top: 1rem;
+}
+.total-compra { font-size: 1.8rem; font-weight: 700; color: var(--texto); }
+
+.estado-vacio {
+  background: var(--superficie);
+  border: 1px solid var(--borde);
+  border-radius: 8px;
+  padding: 3rem 1.5rem;
+  text-align: center;
+}
+.estado-vacio .bi { font-size: 3.5rem; color: var(--borde); }
+
+/* --------------------------------------------------------------------------
+   MIS ÓRDENES: pestañas, estados y línea de progreso
+   -------------------------------------------------------------------------- */
+.pestanas-estado .nav-link { color: var(--texto); font-weight: 600; }
+.pestanas-estado .nav-link:hover { color: var(--enlace); }
+.pestanas-estado .nav-link.active { background: var(--carbon); color: #fff; }
+
+.accordion-button:not(.collapsed) { background: var(--hover-categoria); color: var(--texto); box-shadow: none; }
+.accordion-button:focus { box-shadow: 0 0 0 .2rem var(--foco); }
+.cabecera-orden { display: flex; flex-wrap: wrap; align-items: center; gap: .5rem 1.25rem; width: 100%; padding-right: 1rem; }
+.codigo-orden { font-family: 'IBM Plex Mono', Consolas, monospace; font-weight: 500; }
+.total-orden { margin-left: auto; font-weight: 700; color: var(--texto); }
+
+/* Colores de cada estado (todos con contraste suficiente para su texto) */
+.badge-estado-PENDIENTE { background: #F5C451; color: #3D2E00; }
+.badge-estado-PAGADO { background: var(--carbon); color: #fff; }
+.badge-estado-ENTREGADO { background: var(--verde-stock); color: #fff; }
+.badge-estado-CANCELADO { background: var(--texto-suave); color: #fff; }
+
+/* Línea de progreso: los estados SÍ son una secuencia */
+.pasos-orden { display: flex; gap: .5rem; margin: 0 0 1.25rem; padding: 0; list-style: none; }
+.paso-orden { flex: 1; text-align: center; font-size: .85rem; color: var(--texto-suave); position: relative; }
+.paso-orden::before {
+  content: '';
+  display: block;
+  height: 6px;
+  border-radius: 3px;
+  background: var(--relleno);
+  margin-bottom: .4rem;
+}
+.paso-orden.completo { color: var(--texto); font-weight: 600; }
+.paso-orden.completo::before { background: var(--naranja); }
