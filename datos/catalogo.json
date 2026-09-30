@@ -1,0 +1,818 @@
+[
+{
+  "model": "catalogo.categoria",
+  "pk": 1,
+  "fields": {
+    "nombre": "Procesadores",
+    "descripcion": "Potencia tu PC con procesadores para gaming, trabajo y uso profesional. Encuentra el rendimiento ideal al mejor precio."
+  }
+},
+{
+  "model": "catalogo.categoria",
+  "pk": 2,
+  "fields": {
+    "nombre": "Tarjetas de Video",
+    "descripcion": "Mejora el rendimiento gráfico de tu PC con tarjetas de video para gaming, diseño y creación de contenido al mejor precio."
+  }
+},
+{
+  "model": "catalogo.categoria",
+  "pk": 3,
+  "fields": {
+    "nombre": "Memorias RAM",
+    "descripcion": "Aumenta la velocidad y fluidez de tu PC con memorias RAM de alto rendimiento para gaming, trabajo y multitarea."
+  }
+},
+{
+  "model": "catalogo.categoria",
+  "pk": 4,
+  "fields": {
+    "nombre": "Almacenamiento",
+    "descripcion": "Discos SSD y HDD para escritorio y Notebooks"
+  }
+},
+{
+  "model": "catalogo.categoria",
+  "pk": 5,
+  "fields": {
+    "nombre": "Placas Madre",
+    "descripcion": "Placas madre AM4, AM5 y LGA1700"
+  }
+},
+{
+  "model": "catalogo.categoria",
+  "pk": 6,
+  "fields": {
+    "nombre": "Fuentes de Poder",
+    "descripcion": "Fuentes certificadas 80 Plus para equipos de escritorio"
+  }
+},
+{
+  "model": "catalogo.producto",
+  "pk": 1,
+  "fields": {
+    "categoria": 1,
+    "nombre": "Ryzen 5 7600X",
+    "marca": "AMD",
+    "precio": 189990,
+    "sku": "CPU-AMD-7600X",
+    "descripcion": "6 núcleos, 12 hilos, hasta 5.3 GHz, socket AM5",
+    "stock": 15,
+    "imagen": "productos/Ryzen_5_7600X.png",
+    "fecha_creacion": "2026-09-28T15:21:46.543Z",
+    "fecha_actualizacion": "2026-09-29T01:23:30.004Z"
+  }
+},
+{
+  "model": "catalogo.producto",
+  "pk": 2,
+  "fields": {
+    "categoria": 1,
+    "nombre": "Core i7-14700K",
+    "marca": "Intel",
+    "precio": 399990,
+    "sku": "CPU-INT-14700K",
+    "descripcion": "20 núcleos, 28 hilos, hasta 5.6 GHz, socket LGA1700",
+    "stock": 10,
+    "imagen": "productos/Core_i7-14700K.png",
+    "fecha_creacion": "2026-09-28T15:22:00.644Z",
+    "fecha_actualizacion": "2026-09-29T01:17:11.957Z"
+  }
+},
+{
+  "model": "catalogo.producto",
+  "pk": 3,
+  "fields": {
+    "categoria": 2,
+    "nombre": "GeForce RTX 4060",
+    "marca": "NVIDIA",
+    "precio": 319990,
+    "sku": "GPU-NV-4060",
+    "descripcion": "8 GB GDDR6, DLSS 3, ideal para 1080p",
+    "stock": 12,
+    "imagen": "productos/GeForce_RTX_4060_Ti_8GB.png",
+    "fecha_creacion": "2026-09-28T15:22:15.176Z",
+    "fecha_actualizacion": "2026-09-29T01:17:45.324Z"
+  }
+},
+{
+  "model": "catalogo.producto",
+  "pk": 4,
+  "fields": {
+    "categoria": 2,
+    "nombre": "Radeon RX 7800 XT",
+    "marca": "AMD",
+    "precio": 549990,
+    "sku": "GPU-AMD-7800XT",
+    "descripcion": "16 GB GDDR6, ideal para 1440p",
+    "stock": 0,
+    "imagen": "productos/Radeon_RX_7800_XT.png",
+    "fecha_creacion": "2026-09-28T15:22:26.684Z",
+    "fecha_actualizacion": "2026-09-29T01:21:57.323Z"
+  }
+},
+{
+  "model": "catalogo.producto",
+  "pk": 5,
+  "fields": {
+    "categoria": 3,
+    "nombre": "Vengeance DDR5 32GB (2x16GB)",
+    "marca": "Corsair",
+    "precio": 109990,
+    "sku": "RAM-COR-DDR5-32",
+    "descripcion": "Kit dual channel 6000 MHz CL36",
+    "stock": 20,
+    "imagen": "productos/Vengeance_LPX_DDR4_16GB_2x8GB_JOxP4vk.png",
+    "fecha_creacion": "2026-09-28T15:22:50.488Z",
+    "fecha_actualizacion": "2026-09-29T01:25:32.582Z"
+  }
+},
+{
+  "model": "catalogo.producto",
+  "pk": 6,
+  "fields": {
+    "categoria": 3,
+    "nombre": "Fury Beast DDR4 16GB (2x8GB)",
+    "marca": "Kingston",
+    "precio": 45990,
+    "sku": "RAM-KNG-DDR4-16",
+    "descripcion": "Kit dual channel 3200 MHz CL16",
+    "stock": 0,
+    "imagen": "productos/Fury_Beast_DDR4_16GB_2x8GB.png",
+    "fecha_creacion": "2026-09-28T15:22:55.912Z",
+    "fecha_actualizacion": "2026-09-29T01:17:32.924Z"
+  }
+},
+{
+  "model": "catalogo.producto",
+  "pk": 7,
+  "fields": {
+    "categoria": 4,
+    "nombre": "990 PRO 1TB NVMe M.2",
+    "marca": "Samsung",
+    "precio": 109990,
+    "sku": "SSD-SAM-990PRO-1TB",
+    "descripcion": "Unidad de estado sólido PCIe 4.0 NVMe, lectura hasta 7450 MB/s, ideal para gaming y edición.",
+    "stock": 12,
+    "imagen": "productos/990_PRO_1TB_NVMe_M.2.png",
+    "fecha_creacion": "2026-09-28T21:42:41.131Z",
+    "fecha_actualizacion": "2026-09-29T01:09:41.521Z"
+  }
+},
+{
+  "model": "catalogo.producto",
+  "pk": 8,
+  "fields": {
+    "categoria": 1,
+    "nombre": "Ryzen 7 7800X3D",
+    "marca": "AMD",
+    "precio": 429990,
+    "sku": "CPU-AMD-7800X3D",
+    "descripcion": "8 núcleos, 16 hilos, 96 MB de caché L3 con 3D V-Cache, socket AM5. Pensado para gaming.",
+    "stock": 20,
+    "imagen": "productos/Ryzen_7_7800X3D.png",
+    "fecha_creacion": "2026-09-28T22:04:40.963Z",
+    "fecha_actualizacion": "2026-09-29T01:23:41.151Z"
+  }
+},
+{
+  "model": "catalogo.producto",
+  "pk": 9,
+  "fields": {
+    "categoria": 1,
+    "nombre": "Ryzen 9 7950X",
+    "marca": "AMD",
+    "precio": 559990,
+    "sku": "CPU-AMD-7950X",
+    "descripcion": "16 núcleos, 32 hilos, hasta 5.7 GHz, socket AM5. Para edición y renderizado.",
+    "stock": 10,
+    "imagen": "productos/Ryzen_9_7950X.png",
+    "fecha_creacion": "2026-09-28T22:05:20.579Z",
+    "fecha_actualizacion": "2026-09-29T01:23:52.526Z"
+  }
+},
+{
+  "model": "catalogo.producto",
+  "pk": 10,
+  "fields": {
+    "categoria": 1,
+    "nombre": "Ryzen 5 5600",
+    "marca": "AMD",
+    "precio": 99990,
+    "sku": "CPU-AMD-5600",
+    "descripcion": "6 núcleos, 12 hilos, hasta 4.4 GHz, socket AM4. Incluye disipador.",
+    "stock": 15,
+    "imagen": "productos/Ryzen_5_5600.png",
+    "fecha_creacion": "2026-09-28T22:05:49.284Z",
+    "fecha_actualizacion": "2026-09-29T01:23:22.264Z"
+  }
+},
+{
+  "model": "catalogo.producto",
+  "pk": 11,
+  "fields": {
+    "categoria": 1,
+    "nombre": "Core i5-14600K",
+    "marca": "Intel",
+    "precio": 299990,
+    "sku": "CPU-INT-14600K",
+    "descripcion": "14 núcleos (6P + 8E), 20 hilos, hasta 5.3 GHz, socket LGA1700.",
+    "stock": 8,
+    "imagen": "productos/Core_i5-14600K.png",
+    "fecha_creacion": "2026-09-28T22:06:44.897Z",
+    "fecha_actualizacion": "2026-09-29T01:17:04.340Z"
+  }
+},
+{
+  "model": "catalogo.producto",
+  "pk": 12,
+  "fields": {
+    "categoria": 1,
+    "nombre": "Core i5-12400F",
+    "marca": "Intel",
+    "precio": 119990,
+    "sku": "CPU-INT-12400F",
+    "descripcion": "6 núcleos, 12 hilos, hasta 4.4 GHz, socket LGA1700. Sin gráficos integrados.",
+    "stock": 25,
+    "imagen": "productos/Core_i5-12400F.png",
+    "fecha_creacion": "2026-09-28T22:07:09.233Z",
+    "fecha_actualizacion": "2026-09-29T02:25:20.197Z"
+  }
+},
+{
+  "model": "catalogo.producto",
+  "pk": 13,
+  "fields": {
+    "categoria": 1,
+    "nombre": "Core i9-14900K",
+    "marca": "Intel",
+    "precio": 599990,
+    "sku": "CPU-INT-14900K",
+    "descripcion": "24 núcleos (8P + 16E), 32 hilos, hasta 6.0 GHz, socket LGA1700.",
+    "stock": 0,
+    "imagen": "productos/Core_i9-14900K.png",
+    "fecha_creacion": "2026-09-28T22:07:31.657Z",
+    "fecha_actualizacion": "2026-09-29T01:17:17.257Z"
+  }
+},
+{
+  "model": "catalogo.producto",
+  "pk": 14,
+  "fields": {
+    "categoria": 2,
+    "nombre": "GeForce RTX 4060 Ti 8GB",
+    "marca": "NVIDIA",
+    "precio": 419990,
+    "sku": "GPU-NV-4060TI",
+    "descripcion": "8 GB GDDR6, DLSS 3, para 1080p en calidad alta.",
+    "stock": 5,
+    "imagen": "productos/GeForce_RTX_4060.png",
+    "fecha_creacion": "2026-09-28T22:08:38.515Z",
+    "fecha_actualizacion": "2026-09-29T01:17:52.639Z"
+  }
+},
+{
+  "model": "catalogo.producto",
+  "pk": 15,
+  "fields": {
+    "categoria": 2,
+    "nombre": "GeForce RTX 4070 Super",
+    "marca": "NVIDIA",
+    "precio": 649990,
+    "sku": "GPU-NV-4070S",
+    "descripcion": "12 GB GDDR6X, DLSS 3, ideal para 1440p.",
+    "stock": 3,
+    "imagen": "productos/GeForce_RTX_4070_Super.png",
+    "fecha_creacion": "2026-09-28T22:09:35.091Z",
+    "fecha_actualizacion": "2026-09-29T01:18:04.855Z"
+  }
+},
+{
+  "model": "catalogo.producto",
+  "pk": 16,
+  "fields": {
+    "categoria": 2,
+    "nombre": "GeForce RTX 4080 Super",
+    "marca": "NVIDIA",
+    "precio": 1149990,
+    "sku": "GPU-NV-4080S",
+    "descripcion": "16 GB GDDR6X, pensada para jugar en 4K.",
+    "stock": 2,
+    "imagen": "productos/GeForce_RTX_4080_Super.png",
+    "fecha_creacion": "2026-09-28T22:09:54.692Z",
+    "fecha_actualizacion": "2026-09-29T01:18:34.501Z"
+  }
+},
+{
+  "model": "catalogo.producto",
+  "pk": 17,
+  "fields": {
+    "categoria": 2,
+    "nombre": "Radeon RX 7600",
+    "marca": "AMD",
+    "precio": 279990,
+    "sku": "GPU-AMD-7600",
+    "descripcion": "8 GB GDDR6, buena relación precio/rendimiento en 1080p.",
+    "stock": 12,
+    "imagen": "productos/Radeon_RX_7600.png",
+    "fecha_creacion": "2026-09-28T22:10:29.007Z",
+    "fecha_actualizacion": "2026-09-29T01:21:13.150Z"
+  }
+},
+{
+  "model": "catalogo.producto",
+  "pk": 18,
+  "fields": {
+    "categoria": 2,
+    "nombre": "Radeon RX 7900 XTX",
+    "marca": "AMD",
+    "precio": 999990,
+    "sku": "GPU-AMD-7900XTX",
+    "descripcion": "24 GB GDDR6, alto rendimiento en 4K.",
+    "stock": 3,
+    "imagen": "productos/Radeon_RX_7900_XTX.png",
+    "fecha_creacion": "2026-09-28T22:11:00.823Z",
+    "fecha_actualizacion": "2026-09-29T01:22:08.445Z"
+  }
+},
+{
+  "model": "catalogo.producto",
+  "pk": 19,
+  "fields": {
+    "categoria": 2,
+    "nombre": "Arc A750",
+    "marca": "Intel",
+    "precio": 219990,
+    "sku": "GPU-INT-A750",
+    "descripcion": "8 GB GDDR6, escalado XeSS, para 1080p.",
+    "stock": 35,
+    "imagen": "productos/Arc_A750.png",
+    "fecha_creacion": "2026-09-28T22:11:21.497Z",
+    "fecha_actualizacion": "2026-09-29T01:16:33.268Z"
+  }
+},
+{
+  "model": "catalogo.producto",
+  "pk": 20,
+  "fields": {
+    "categoria": 3,
+    "nombre": "Trident Z5 RGB DDR5 32GB (2x16GB)",
+    "marca": "G.Skill",
+    "precio": 139990,
+    "sku": "RAM-GSK-Z5-32",
+    "descripcion": "Kit dual channel 6400 MHz CL32 con iluminación RGB.",
+    "stock": 8,
+    "imagen": "productos/Trident_Z5_RGB_DDR5_32GB_2x16GB.png",
+    "fecha_creacion": "2026-09-28T22:12:08.407Z",
+    "fecha_actualizacion": "2026-09-29T01:24:11.023Z"
+  }
+},
+{
+  "model": "catalogo.producto",
+  "pk": 21,
+  "fields": {
+    "categoria": 3,
+    "nombre": "Vengeance LPX DDR4 16GB (2x8GB)",
+    "marca": "Corsair",
+    "precio": 42990,
+    "sku": "RAM-COR-LPX-16",
+    "descripcion": "Kit dual channel 3200 MHz CL16, disipador de perfil bajo.",
+    "stock": 28,
+    "imagen": "productos/Vengeance_LPX_DDR4_16GB_2x8GB_wSzGJ7N.png",
+    "fecha_creacion": "2026-09-28T22:12:38.572Z",
+    "fecha_actualizacion": "2026-09-29T01:24:53.313Z"
+  }
+},
+{
+  "model": "catalogo.producto",
+  "pk": 22,
+  "fields": {
+    "categoria": 3,
+    "nombre": "Fury Beast DDR5 32GB (2x16GB)",
+    "marca": "Kingston",
+    "precio": 119990,
+    "sku": "RAM-KNG-DDR5-32",
+    "descripcion": "Kit dual channel 5600 MHz CL36.",
+    "stock": 12,
+    "imagen": "productos/Fury_Beast_DDR5_32GB_2x16GB.png",
+    "fecha_creacion": "2026-09-28T22:13:17.513Z",
+    "fecha_actualizacion": "2026-09-29T01:17:39.613Z"
+  }
+},
+{
+  "model": "catalogo.producto",
+  "pk": 23,
+  "fields": {
+    "categoria": 3,
+    "nombre": "Ripjaws V DDR4 32GB (2x16GB)",
+    "marca": "G.Skill",
+    "precio": 74990,
+    "sku": "RAM-GSK-RV-32",
+    "descripcion": "Kit dual channel 3600 MHz CL18.",
+    "stock": 22,
+    "imagen": "productos/Ripjaws_V_DDR4_32GB_2x16GB.png",
+    "fecha_creacion": "2026-09-28T22:13:40.259Z",
+    "fecha_actualizacion": "2026-09-29T01:22:24.605Z"
+  }
+},
+{
+  "model": "catalogo.producto",
+  "pk": 24,
+  "fields": {
+    "categoria": 3,
+    "nombre": "Vengeance RGB DDR5 64GB (2x32GB)",
+    "marca": "Corsair",
+    "precio": 229990,
+    "sku": "RAM-COR-DDR5-64",
+    "descripcion": "Kit dual channel 6000 MHz CL30 con RGB. Para edición y virtualización.",
+    "stock": 2,
+    "imagen": "productos/Vengeance_RGB_DDR5_64GB_2x32GB.png",
+    "fecha_creacion": "2026-09-28T22:14:03.354Z",
+    "fecha_actualizacion": "2026-09-29T01:26:01.129Z"
+  }
+},
+{
+  "model": "catalogo.producto",
+  "pk": 25,
+  "fields": {
+    "categoria": 3,
+    "nombre": "Pro DDR5 32GB (2x16GB)",
+    "marca": "Crucial",
+    "precio": 99990,
+    "sku": "RAM-CRU-DDR5-32",
+    "descripcion": "Kit dual channel 5600 MHz, diseño sobrio para estaciones de trabajo.",
+    "stock": 15,
+    "imagen": "productos/Pro_DDR5_32GB_2x16GB.png",
+    "fecha_creacion": "2026-09-28T22:14:28.335Z",
+    "fecha_actualizacion": "2026-09-29T01:20:49.841Z"
+  }
+},
+{
+  "model": "catalogo.producto",
+  "pk": 26,
+  "fields": {
+    "categoria": 4,
+    "nombre": "990 PRO 2TB NVMe M.2",
+    "marca": "Samsung",
+    "precio": 189990,
+    "sku": "SSD-SAM-990PRO-2TB",
+    "descripcion": "SSD PCIe 4.0 NVMe, lectura hasta 7450 MB/s.",
+    "stock": 7,
+    "imagen": "productos/990_PRO_2TB_NVMe_M.2.png",
+    "fecha_creacion": "2026-09-28T22:16:54.525Z",
+    "fecha_actualizacion": "2026-09-29T01:16:27.569Z"
+  }
+},
+{
+  "model": "catalogo.producto",
+  "pk": 27,
+  "fields": {
+    "categoria": 4,
+    "nombre": "WD_BLACK SN850X 1TB NVMe M.2",
+    "marca": "Western Digital",
+    "precio": 99990,
+    "sku": "SSD-WD-SN850X-1TB",
+    "descripcion": "SSD PCIe 4.0 NVMe, lectura hasta 7300 MB/s.",
+    "stock": 10,
+    "imagen": "productos/WD_BLACK_SN850X_1TB_NVMe_M.2.png",
+    "fecha_creacion": "2026-09-28T22:17:16.818Z",
+    "fecha_actualizacion": "2026-09-29T01:26:24.715Z"
+  }
+},
+{
+  "model": "catalogo.producto",
+  "pk": 28,
+  "fields": {
+    "categoria": 4,
+    "nombre": "NV2 1TB NVMe M.2",
+    "marca": "Kingston",
+    "precio": 54990,
+    "sku": "SSD-KNG-NV2-1TB",
+    "descripcion": "SSD PCIe 4.0 NVMe, lectura hasta 3500 MB/s.",
+    "stock": 0,
+    "imagen": "productos/NV2_1TB_NVMe_M_nLprtuc.2.png",
+    "fecha_creacion": "2026-09-28T22:17:48.630Z",
+    "fecha_actualizacion": "2026-09-29T01:20:15.098Z"
+  }
+},
+{
+  "model": "catalogo.producto",
+  "pk": 29,
+  "fields": {
+    "categoria": 4,
+    "nombre": "MX500 1TB SATA 2.5\"",
+    "marca": "Crucial",
+    "precio": 64990,
+    "sku": "SSD-CRU-MX500-1TB",
+    "descripcion": "SSD SATA III, lectura hasta 560 MB/s. Ideal para actualizar equipos antiguos.",
+    "stock": 18,
+    "imagen": "productos/MX500_1TB_SATA_2.5.png",
+    "fecha_creacion": "2026-09-28T22:18:09.699Z",
+    "fecha_actualizacion": "2026-09-29T01:19:21.766Z"
+  }
+},
+{
+  "model": "catalogo.producto",
+  "pk": 30,
+  "fields": {
+    "categoria": 4,
+    "nombre": "P3 Plus 2TB NVMe M.2",
+    "marca": "Crucial",
+    "precio": 119990,
+    "sku": "SSD-CRU-P3P-2TB",
+    "descripcion": "SSD PCIe 4.0 NVMe, lectura hasta 5000 MB/s.",
+    "stock": 6,
+    "imagen": "productos/P3_Plus_2TB_NVMe_M.2.png",
+    "fecha_creacion": "2026-09-28T22:18:37.087Z",
+    "fecha_actualizacion": "2026-09-29T01:20:28.494Z"
+  }
+},
+{
+  "model": "catalogo.producto",
+  "pk": 31,
+  "fields": {
+    "categoria": 4,
+    "nombre": "Barracuda 2TB 3.5\"",
+    "marca": "Seagate",
+    "precio": 64990,
+    "sku": "HDD-SEA-BAR-2TB",
+    "descripcion": "Disco duro de 7200 RPM para almacenamiento masivo.",
+    "stock": 34,
+    "imagen": "productos/Barracuda_2TB_3.5.png",
+    "fecha_creacion": "2026-09-28T22:19:08.708Z",
+    "fecha_actualizacion": "2026-09-29T01:16:53.824Z"
+  }
+},
+{
+  "model": "catalogo.producto",
+  "pk": 32,
+  "fields": {
+    "categoria": 4,
+    "nombre": "WD Blue 4TB 3.5\"",
+    "marca": "Western Digital",
+    "precio": 89990,
+    "sku": "HDD-WD-BLUE-4TB",
+    "descripcion": "Disco duro de 5400 RPM para respaldos y archivos.",
+    "stock": 5,
+    "imagen": "productos/WD_Blue_4TB_3.5.png",
+    "fecha_creacion": "2026-09-28T22:19:28.788Z",
+    "fecha_actualizacion": "2026-09-29T01:26:15.075Z"
+  }
+},
+{
+  "model": "catalogo.producto",
+  "pk": 33,
+  "fields": {
+    "categoria": 5,
+    "nombre": "B650 AORUS ELITE AX",
+    "marca": "Gigabyte",
+    "precio": 229990,
+    "sku": "MB-GIG-B650-EAX",
+    "descripcion": "Socket AM5, DDR5, PCIe 4.0, Wi-Fi 6E, formato ATX.",
+    "stock": 8,
+    "imagen": "productos/B650_AORUS_ELITE_AX.png",
+    "fecha_creacion": "2026-09-28T22:21:14.744Z",
+    "fecha_actualizacion": "2026-09-29T01:16:45.217Z"
+  }
+},
+{
+  "model": "catalogo.producto",
+  "pk": 34,
+  "fields": {
+    "categoria": 5,
+    "nombre": "ROG STRIX B650-A GAMING WIFI",
+    "marca": "ASUS",
+    "precio": 269990,
+    "sku": "MB-ASU-B650A",
+    "descripcion": "Socket AM5, DDR5, Wi-Fi 6E, formato ATX.",
+    "stock": 5,
+    "imagen": "productos/ROG_STRIX_B650-A_GAMING_WIFI.png",
+    "fecha_creacion": "2026-09-28T22:21:40.846Z",
+    "fecha_actualizacion": "2026-09-29T01:23:01.287Z"
+  }
+},
+{
+  "model": "catalogo.producto",
+  "pk": 35,
+  "fields": {
+    "categoria": 5,
+    "nombre": "MAG B650 TOMAHAWK WIFI",
+    "marca": "MSI",
+    "precio": 249990,
+    "sku": "MB-MSI-B650-TOM",
+    "descripcion": "Socket AM5, DDR5, Wi-Fi 6E, formato ATX.",
+    "stock": 7,
+    "imagen": "productos/MAG_B650_TOMAHAWK_WIFI.png",
+    "fecha_creacion": "2026-09-28T22:22:13.458Z",
+    "fecha_actualizacion": "2026-09-29T01:18:56.016Z"
+  }
+},
+{
+  "model": "catalogo.producto",
+  "pk": 36,
+  "fields": {
+    "categoria": 5,
+    "nombre": "X670E TAICHI",
+    "marca": "ASRock",
+    "precio": 499990,
+    "sku": "MB-ASR-X670E-TAI",
+    "descripcion": "Socket AM5, DDR5, PCIe 5.0, formato E-ATX. Gama entusiasta.",
+    "stock": 0,
+    "imagen": "productos/X670E_TAICHI.png",
+    "fecha_creacion": "2026-09-28T22:22:43.835Z",
+    "fecha_actualizacion": "2026-09-29T01:26:31.609Z"
+  }
+},
+{
+  "model": "catalogo.producto",
+  "pk": 37,
+  "fields": {
+    "categoria": 5,
+    "nombre": "B550M DS3H",
+    "marca": "Gigabyte",
+    "precio": 89990,
+    "sku": "MB-GIG-B550M-DS3H",
+    "descripcion": "Socket AM4, DDR4, formato Micro-ATX.",
+    "stock": 12,
+    "imagen": "productos/B550M_DS3H.png",
+    "fecha_creacion": "2026-09-28T22:23:09.791Z",
+    "fecha_actualizacion": "2026-09-29T01:16:38.900Z"
+  }
+},
+{
+  "model": "catalogo.producto",
+  "pk": 38,
+  "fields": {
+    "categoria": 5,
+    "nombre": "PRO B760M-A WIFI",
+    "marca": "MSI",
+    "precio": 139990,
+    "sku": "MB-MSI-B760M-A",
+    "descripcion": "Socket LGA1700, DDR5, Wi-Fi 6E, formato Micro-ATX.",
+    "stock": 13,
+    "imagen": "productos/PRO_B760M-A_WIFI.png",
+    "fecha_creacion": "2026-09-28T22:45:49.142Z",
+    "fecha_actualizacion": "2026-09-29T01:20:35.873Z"
+  }
+},
+{
+  "model": "catalogo.producto",
+  "pk": 39,
+  "fields": {
+    "categoria": 5,
+    "nombre": "TUF GAMING Z790-PLUS WIFI",
+    "marca": "ASUS",
+    "precio": 299990,
+    "sku": "MB-ASU-Z790-TUF",
+    "descripcion": "Socket LGA1700, DDR5, Wi-Fi 6, formato ATX.",
+    "stock": 5,
+    "imagen": "productos/TUF_GAMING_Z790-PLUS_WIFI.png",
+    "fecha_creacion": "2026-09-28T22:46:19.277Z",
+    "fecha_actualizacion": "2026-09-29T01:24:19.145Z"
+  }
+},
+{
+  "model": "catalogo.producto",
+  "pk": 40,
+  "fields": {
+    "categoria": 5,
+    "nombre": "Z790 AORUS ELITE AX",
+    "marca": "Gigabyte",
+    "precio": 289990,
+    "sku": "MB-GIG-Z790-EAX",
+    "descripcion": "Socket LGA1700, DDR5, Wi-Fi 6E, formato ATX.",
+    "stock": 0,
+    "imagen": "productos/Z790_AORUS_ELITE_AX.png",
+    "fecha_creacion": "2026-09-28T22:46:39.498Z",
+    "fecha_actualizacion": "2026-09-29T01:26:38.131Z"
+  }
+},
+{
+  "model": "catalogo.producto",
+  "pk": 41,
+  "fields": {
+    "categoria": 6,
+    "nombre": "RM850x 850W 80 Plus Gold",
+    "marca": "Corsair",
+    "precio": 139990,
+    "sku": "PSU-COR-RM850X",
+    "descripcion": "Totalmente modular, certificación 80 Plus Gold, ventilador silencioso.",
+    "stock": 10,
+    "imagen": "productos/RM850x_850W_80_Plus_Gold.png",
+    "fecha_creacion": "2026-09-28T22:47:19.679Z",
+    "fecha_actualizacion": "2026-09-29T01:22:51.914Z"
+  }
+},
+{
+  "model": "catalogo.producto",
+  "pk": 42,
+  "fields": {
+    "categoria": 6,
+    "nombre": "RM750e 750W 80 Plus Gold",
+    "marca": "Corsair",
+    "precio": 99990,
+    "sku": "PSU-COR-RM750E",
+    "descripcion": "Totalmente modular, certificación 80 Plus Gold.",
+    "stock": 12,
+    "imagen": "productos/RM750e_750W_80_Plus_Gold.png",
+    "fecha_creacion": "2026-09-28T22:47:48.614Z",
+    "fecha_actualizacion": "2026-09-29T01:22:42.089Z"
+  }
+},
+{
+  "model": "catalogo.producto",
+  "pk": 43,
+  "fields": {
+    "categoria": 6,
+    "nombre": "Focus GX-750 750W 80 Plus Gold",
+    "marca": "Seasonic",
+    "precio": 109990,
+    "sku": "PSU-SEA-GX750",
+    "descripcion": "Totalmente modular, certificación 80 Plus Gold.",
+    "stock": 8,
+    "imagen": "productos/Focus_GX-750_750W_80_Plus_Gold.png",
+    "fecha_creacion": "2026-09-28T22:48:14.046Z",
+    "fecha_actualizacion": "2026-09-29T01:17:25.006Z"
+  }
+},
+{
+  "model": "catalogo.producto",
+  "pk": 44,
+  "fields": {
+    "categoria": 6,
+    "nombre": "MWE Gold 850 V2",
+    "marca": "Cooler Master",
+    "precio": 94990,
+    "sku": "PSU-CM-MWE850",
+    "descripcion": "Totalmente modular, certificación 80 Plus Gold.",
+    "stock": 43,
+    "imagen": "productos/MWE_Gold_850_V2.png",
+    "fecha_creacion": "2026-09-28T22:48:37.114Z",
+    "fecha_actualizacion": "2026-09-29T01:19:04.554Z"
+  }
+},
+{
+  "model": "catalogo.producto",
+  "pk": 45,
+  "fields": {
+    "categoria": 6,
+    "nombre": "Pure Power 12 M 750W",
+    "marca": "be quiet!",
+    "precio": 104990,
+    "sku": "PSU-BQ-PP12M-750",
+    "descripcion": "Modular, certificación 80 Plus Gold, funcionamiento silencioso.",
+    "stock": 6,
+    "imagen": "productos/Pure_Power_12_M_750W.png",
+    "fecha_creacion": "2026-09-28T22:49:01.163Z",
+    "fecha_actualizacion": "2026-09-29T01:21:01.365Z"
+  }
+},
+{
+  "model": "catalogo.producto",
+  "pk": 46,
+  "fields": {
+    "categoria": 6,
+    "nombre": "System Power 10 650W",
+    "marca": "be quiet!",
+    "precio": 59990,
+    "sku": "PSU-BQ-SP10-650",
+    "descripcion": "Certificación 80 Plus Bronze, para equipos de gama media.",
+    "stock": 13,
+    "imagen": "productos/System_Power_10_650W.png",
+    "fecha_creacion": "2026-09-28T22:49:21.007Z",
+    "fecha_actualizacion": "2026-09-29T01:24:01.922Z"
+  }
+},
+{
+  "model": "catalogo.producto",
+  "pk": 47,
+  "fields": {
+    "categoria": 6,
+    "nombre": "ROG Thor 1000W Platinum II",
+    "marca": "ASUS",
+    "precio": 349990,
+    "sku": "PSU-ASU-THOR-1000",
+    "descripcion": "Totalmente modular, certificación 80 Plus Platinum, pantalla OLED de consumo.",
+    "stock": 4,
+    "imagen": "productos/ROG_Thor_1000W_Platinum_II.png",
+    "fecha_creacion": "2026-09-28T22:49:46.787Z",
+    "fecha_actualizacion": "2026-09-29T01:23:11.489Z"
+  }
+},
+{
+  "model": "catalogo.producto",
+  "pk": 48,
+  "fields": {
+    "categoria": 6,
+    "nombre": "MAG A650BN 650W",
+    "marca": "MSI",
+    "precio": 49990,
+    "sku": "PSU-MSI-A650BN",
+    "descripcion": "Certificación 80 Plus Bronze, para equipos de entrada.",
+    "stock": 28,
+    "imagen": "productos/MAG_A650BN_650W.png",
+    "fecha_creacion": "2026-09-28T22:50:06.218Z",
+    "fecha_actualizacion": "2026-09-30T18:11:59.905Z"
+  }
+}
+]
