@@ -18,8 +18,12 @@
    para que los registros nuevos no choquen con los importados.
  - Durante la carga las señales reciben raw=True; por eso la señal del
    carro no crea carros duplicados (ver carrito/signals.py).
+ - Codificación: loaddata solo lee UTF-8. Si el archivo se exportó en
+   Windows con una versión anterior de exportar_datos (en cp1252), aquí
+   se convierte a una copia temporal en UTF-8 antes de cargarla.
 ==========================================================================
 """
+import tempfile
 from pathlib import Path
 
 from django.conf import settings
@@ -34,6 +38,25 @@ from ordenes.models import Orden
 CARPETA_DATOS = Path(settings.BASE_DIR) / 'datos'
 ARCHIVO_CATALOGO = CARPETA_DATOS / 'catalogo.json'
 ARCHIVO_COMPLETO = CARPETA_DATOS / 'tienda.json'
+
+
+def cargar_archivo(archivo):
+    """
+    Carga el JSON con loaddata asegurando que esté en UTF-8:
+    - Se intenta leer como UTF-8 (utf-8-sig también acepta el BOM).
+    - Si falla, se lee como cp1252 (codificación de Windows).
+    - Se escribe una copia temporal en UTF-8, se carga y se borra.
+    """
+    datos = archivo.read_bytes()
+    try:
+        texto = datos.decode('utf-8-sig')
+    except UnicodeDecodeError:
+        texto = datos.decode('cp1252')
+
+    with tempfile.TemporaryDirectory() as carpeta:
+        copia = Path(carpeta) / archivo.name
+        copia.write_text(texto, encoding='utf-8')
+        call_command('loaddata', str(copia), verbosity=0)
 
 
 class Command(BaseCommand):
@@ -53,7 +76,7 @@ class Command(BaseCommand):
         if not solo_catalogo and Usuario.objects.exists():
             raise CommandError('Para importar el respaldo completo (tienda.json) la base no debe tener usuarios.')
 
-        call_command('loaddata', str(archivo), verbosity=0)
+        cargar_archivo(archivo)
 
         productos_con_foto = Producto.objects.exclude(imagen='').exclude(imagen__isnull=True)
         faltantes = [p.nombre for p in productos_con_foto if not p.imagen.storage.exists(p.imagen.name)]

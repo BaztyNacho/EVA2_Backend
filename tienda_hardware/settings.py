@@ -11,17 +11,24 @@
 """
 from pathlib import Path
 from datetime import timedelta
-from decouple import config
+from decouple import Csv, config
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 
 # --------------------------------------------------------------------------
 # SEGURIDAD BÁSICA
 # SECRET_KEY firma las sesiones y también los tokens JWT (algoritmo HS256).
+# DEBUG: True en desarrollo (tu PC) y False en producción (servidor AWS).
+# ALLOWED_HOSTS: direcciones desde las que se puede abrir el sitio. Se leen
+#   del .env separadas por coma (Csv), así el mismo código sirve en tu PC
+#   (127.0.0.1,localhost) y en el servidor (su IP elástica).
+# CSRF_TRUSTED_ORIGINS: orígenes permitidos para enviar formularios POST
+#   (como el login del admin de Django). En el servidor: http://<IP>.
 # --------------------------------------------------------------------------
 SECRET_KEY = config('SECRET_KEY')
 DEBUG = config('DEBUG', default=True, cast=bool)
-ALLOWED_HOSTS = ['127.0.0.1', 'localhost']
+ALLOWED_HOSTS = config('ALLOWED_HOSTS', default='127.0.0.1,localhost', cast=Csv())
+CSRF_TRUSTED_ORIGINS = config('CSRF_TRUSTED_ORIGINS', default='', cast=Csv())
 
 
 # --------------------------------------------------------------------------
@@ -50,12 +57,19 @@ INSTALLED_APPS = [
     'ordenes',    # Órdenes de compra, estados y lógica de stock
 ]
 
+# --------------------------------------------------------------------------
+# MIDDLEWARE
+# BloqueoNavegacionAdmin (propio) va después de AuthenticationMiddleware
+# porque necesita request.user: impide que visitantes y clientes abran en
+# el navegador /admin/ y /api/ (ver tienda_hardware/middleware.py).
+# --------------------------------------------------------------------------
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
+    'tienda_hardware.middleware.BloqueoNavegacionAdmin',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
 ]
@@ -134,6 +148,11 @@ USE_TZ = True
 # --------------------------------------------------------------------------
 STATIC_URL = 'static/'
 STATICFILES_DIRS = [BASE_DIR / 'static']
+
+# STATIC_ROOT: carpeta donde "python manage.py collectstatic" junta TODOS
+# los archivos estáticos (los de la tienda, los del admin de Django y los
+# de DRF). En producción Nginx los entrega desde ahí. No se sube a GitHub.
+STATIC_ROOT = BASE_DIR / 'staticfiles'
 
 # --------------------------------------------------------------------------
 # ARCHIVOS SUBIDOS (MEDIA): fotos de productos cargadas desde el panel.

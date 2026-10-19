@@ -5,7 +5,8 @@
    - Escape de HTML (seguridad contra XSS).
    - Imagen de producto (foto o ícono) y tarjetas de producto reutilizables.
    - Menú de cuenta según el rol, menú de categorías y contador del carro.
-   - Modo administrador: barra superior e insignia ADMIN.
+   - Modo administrador: barra superior, insignia ADMIN y acceso al admin
+     de Django y a la documentación (abre antes la sesión de Django).
    - Mini-carro lateral: se abre al presionar el ícono del carro.
    - Botón "Agregar al carro" y notificaciones (toasts).
    Requiere que api.js esté cargado antes.
@@ -233,6 +234,28 @@ function mostrarModoAdministrador() {
   document.body.classList.add('modo-admin');
   const nombre = document.getElementById('barra-admin-usuario');
   if (nombre) nombre.textContent = usuario.username;
+  activarAccesosAdministracion();
+}
+
+/* --------------------------------------------------------------------------
+   ACCESO AL ADMIN DE DJANGO Y A LA DOCUMENTACIÓN
+   Esas rutas solo se abren con la sesión de Django del superusuario
+   (middleware BloqueoNavegacionAdmin). Al hacer clic en sus enlaces de
+   la barra ámbar, primero se pide esa sesión con el token JWT
+   (POST /api/auth/sesion-admin/) y recién después se navega.
+   -------------------------------------------------------------------------- */
+function activarAccesosAdministracion() {
+  document.querySelectorAll('.barra-admin a[href^="/admin/"], .barra-admin a[href^="/api/docs/"]').forEach(enlace => {
+    enlace.addEventListener('click', async evento => {
+      evento.preventDefault();
+      const { ok, datos } = await apiFetch('/auth/sesion-admin/', { method: 'POST' });
+      if (ok) {
+        window.location.href = enlace.getAttribute('href');
+      } else {
+        mostrarToast((datos && datos.detail) || 'No se pudo abrir la sesión de administración.', 'danger');
+      }
+    });
+  });
 }
 
 

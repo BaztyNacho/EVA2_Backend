@@ -1,9 +1,11 @@
 """
 ==========================================================================
  VISTAS DE LA APP: usuarios
- Endpoints de autenticación: login, refresh, registro, perfil y logout.
+ Endpoints de autenticación: login, refresh, registro, perfil, logout y
+ apertura de la sesión de Django para el superusuario (sesion-admin).
 ==========================================================================
 """
+from django.contrib.auth import login
 from drf_spectacular.utils import extend_schema
 from rest_framework import generics, status
 from rest_framework.permissions import AllowAny, IsAuthenticated
@@ -13,6 +15,7 @@ from rest_framework_simplejwt.exceptions import TokenError
 from rest_framework_simplejwt.tokens import RefreshToken
 from rest_framework_simplejwt.views import TokenObtainPairView
 
+from .permissions import EsAdministrador
 from .serializers import (
     LogoutSerializer,
     RegistroSerializer,
@@ -89,3 +92,35 @@ class LogoutView(APIView):
             {'detail': 'Sesión cerrada correctamente.'},
             status=status.HTTP_205_RESET_CONTENT,
         )
+
+
+class SesionAdminView(APIView):
+    """
+    ----------------------------------------------------------------------
+    POST /api/auth/sesion-admin/  (requiere token de ADMINISTRADOR)
+    El admin de Django y la documentación Swagger usan la SESIÓN de
+    Django (cookie), no el JWT, porque se abren navegando y el navegador
+    no envía el token guardado en localStorage. Además, el middleware
+    BloqueoNavegacionAdmin no deja abrir esas rutas sin esa sesión.
+    Esta vista "traduce" el JWT a una sesión de Django:
+    1. EsAdministrador valida el token y el rol ADMINISTRADOR.
+    2. Se exige además is_superuser (solo él accede al admin de Django).
+    3. login() crea la sesión (cookie sessionid, 5 minutos de
+       inactividad según SESSION_COOKIE_AGE).
+    La llama el JavaScript de la barra de administrador (tienda.js)
+    antes de navegar a /admin/ o /api/docs/. No hay riesgo de CSRF: la
+    petición exige el header Authorization, que otro sitio no puede
+    enviar en nombre del usuario.
+    ----------------------------------------------------------------------
+    """
+    permission_classes = [EsAdministrador]
+
+    @extend_schema(request=None, responses={200: None, 403: None})
+    def post(self, request):
+        if not request.user.is_superuser:
+            return Response(
+                {'detail': 'Solo el superusuario puede acceder al admin de Django y a la documentación.'},
+                status=status.HTTP_403_FORBIDDEN,
+            )
+        login(request._request, request.user, backend='django.contrib.auth.backends.ModelBackend')
+        return Response({'detail': 'Sesión de administración abierta.'})

@@ -9,6 +9,9 @@ venv/
 # El catálogo sin datos personales (datos/catalogo.json) SÍ se sube.
 datos/tienda.json
 
+# Estáticos recopilados con collectstatic (se generan en el servidor)
+staticfiles/
+
 # Archivos compilados de Python
 __pycache__/
 *.pyc

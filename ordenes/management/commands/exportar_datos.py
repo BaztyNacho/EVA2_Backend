@@ -14,11 +14,14 @@
  No se exportan datos que no tiene sentido trasladar: sesiones activas,
  tokens JWT en blacklist, permisos y tipos de contenido (Django los
  regenera solo con migrate).
- Usa dumpdata internamente y escribe el archivo directamente en UTF-8
- (redirigir con ">" en PowerShell lo guardaría en UTF-16 y luego fallaría
- la importación).
+ Usa dumpdata internamente, pero NO le pide que escriba el archivo: en
+ Windows, dumpdata lo guardaría con la codificación del sistema (cp1252)
+ y las tildes no se podrían leer en el servidor Linux. Por eso el
+ resultado se recibe en memoria (StringIO) y se guarda explícitamente en
+ UTF-8. (Redirigir con ">" en PowerShell tampoco sirve: guarda en UTF-16.)
 ==========================================================================
 """
+from io import StringIO
 from pathlib import Path
 
 from django.conf import settings
@@ -55,7 +58,9 @@ class Command(BaseCommand):
         # guardan por su nombre y no por su id, que puede ser distinto
         # en la otra base de datos.
         # --------------------------------------------------------------
-        call_command('dumpdata', *apps, natural_foreign=True, indent=2, output=str(archivo))
+        contenido = StringIO()
+        call_command('dumpdata', *apps, natural_foreign=True, indent=2, stdout=contenido)
+        archivo.write_text(contenido.getvalue(), encoding='utf-8')
 
         # Revisión de las fotos: cada ruta guardada debe existir en media/
         productos_con_foto = Producto.objects.exclude(imagen='').exclude(imagen__isnull=True)
