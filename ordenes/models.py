@@ -3,6 +3,8 @@
  MODELOS DE LA APP: ordenes
  Registro histórico de las compras (Órdenes de Compra) y sus ítems.
  Ciclo de vida: PENDIENTE -> PAGADO -> ENTREGADO  (o CANCELADO)
+ Incluye TransaccionWebpay: el registro de cada intento de pago con
+ Transbank (Webpay Plus) asociado a una orden.
 ==========================================================================
 """
 import uuid
@@ -116,3 +118,64 @@ class ItemOrden(models.Model):
 
     def __str__(self):
         return f'{self.cantidad} x {self.nombre_producto}'
+
+
+class TransaccionWebpay(models.Model):
+    """
+    ----------------------------------------------------------------------
+    TRANSACCIÓN WEBPAY PLUS (Transbank)
+    Guarda CADA intento de pago con tarjeta de una orden. Una orden puede
+    tener varios intentos (ej: el primero rechazado y el segundo
+    aprobado), por eso es una FK y no una relación 1 a 1.
+    - token: identificador que entrega Transbank al crear la transacción.
+      Con él se confirma (commit) el pago cuando el cliente vuelve.
+    - orden_compra: "buy_order" enviado a Transbank (máx. 26 caracteres).
+    - monto: total cobrado, copiado de la orden al iniciar el pago.
+    - codigo_autorizacion / ultimos_digitos / tipo_pago / cuotas: datos
+      que devuelve Transbank al confirmar (comprobante del pago).
+    - codigo_respuesta: 0 = aprobado; cualquier otro valor = rechazado.
+    - detalle: mensaje interno (motivo de rechazo, anulación, error).
+    - orden: FK con PROTECT -> no se puede borrar una orden con pagos.
+    ----------------------------------------------------------------------
+    """
+
+    # ------------------------------------------------------------------
+    # CHOICES del estado de la transacción
+    # ------------------------------------------------------------------
+    class Estado(models.TextChoices):
+        INICIADA = 'INICIADA', 'Iniciada (cliente en Webpay)'
+        AUTORIZADA = 'AUTORIZADA', 'Autorizada'
+        RECHAZADA = 'RECHAZADA', 'Rechazada'
+        ANULADA = 'ANULADA', 'Anulada (pago devuelto)'
+        ABORTADA = 'ABORTADA', 'Abortada por el cliente'
+        ERROR = 'ERROR', 'Error'
+
+    orden = models.ForeignKey(
+        Orden,
+        on_delete=models.PROTECT,
+        related_name='transacciones',
+    )
+    token = models.CharField(max_length=100, unique=True)
+    orden_compra = models.CharField(max_length=26)
+    monto = models.PositiveIntegerField(help_text='Monto en CLP enviado a Transbank')
+    estado = models.CharField(
+        max_length=10,
+        choices=Estado.choices,
+        default=Estado.INICIADA,
+    )
+    codigo_respuesta = models.IntegerField(null=True, blank=True)
+    codigo_autorizacion = models.CharField(max_length=20, blank=True)
+    ultimos_digitos = models.CharField(max_length=4, blank=True)
+    tipo_pago = models.CharField(max_length=4, blank=True, help_text='VD: débito, VN: crédito, etc.')
+    cuotas = models.PositiveSmallIntegerField(null=True, blank=True)
+    detalle = models.CharField(max_length=255, blank=True)
+    fecha_creacion = models.DateTimeField(auto_now_add=True)
+    fecha_actualizacion = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        verbose_name = 'transacción Webpay'
+        verbose_name_plural = 'transacciones Webpay'
+        ordering = ['-fecha_creacion']
+
+    def __str__(self):
+        return f'{self.orden_compra} - {self.get_estado_display()}'

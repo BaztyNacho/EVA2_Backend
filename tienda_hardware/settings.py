@@ -246,6 +246,23 @@ DOCS_SOLO_ADMIN = config('DOCS_SOLO_ADMIN', default=True, cast=bool)
 
 
 # --------------------------------------------------------------------------
+# TRANSBANK - WEBPAY PLUS (pago con tarjeta)
+# Se usa el AMBIENTE DE INTEGRACIÓN (pruebas): no se cobra dinero real.
+# El código de comercio y la API Key por defecto son las credenciales
+# PÚBLICAS de prueba que Transbank entrega para todos los desarrolladores.
+# - TRANSBANK_AMBIENTE: 'INTEGRACION' (pruebas) o 'PRODUCCION'.
+# - Para pasar a producción, Transbank entrega credenciales propias que
+#   se escriben SOLO en el .env (nunca en GitHub).
+# --------------------------------------------------------------------------
+TRANSBANK_AMBIENTE = config('TRANSBANK_AMBIENTE', default='INTEGRACION')
+TRANSBANK_CODIGO_COMERCIO = config('TRANSBANK_CODIGO_COMERCIO', default='597055555532')
+TRANSBANK_API_KEY = config(
+    'TRANSBANK_API_KEY',
+    default='579B532A7440BB0C9079DED94D31EA1615BACEB56610332264630D42D0A36B1C',
+)
+
+
+# --------------------------------------------------------------------------
 # DATOS DEL ALUMNO (se muestran en el footer de las vistas HTML)
 # --------------------------------------------------------------------------
 DATOS_ALUMNO = {

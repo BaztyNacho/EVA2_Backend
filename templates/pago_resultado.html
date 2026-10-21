@@ -1,0 +1,92 @@
+{% extends 'base.html' %}
+{% load static %}
+{% comment %}
+==========================================================================
+ RESULTADO DEL PAGO CON WEBPAY ( /pago/webpay/retorno/ )
+ La renderiza la vista webpay_retorno después de hablar con Transbank.
+ Variables: estado, registro (TransaccionWebpay), orden, monto y tipo_pago.
+ Estados posibles:
+   AUTORIZADA -> pago aprobado, la orden quedó PAGADA (stock descontado).
+   RECHAZADA  -> el banco rechazó: la orden sigue PENDIENTE.
+   ANULADA    -> se aprobó, pero se agotó el stock: el pago se devolvió.
+   ABORTADA   -> el cliente anuló en Webpay o se agotó el tiempo.
+   ERROR      -> no se pudo confirmar con Transbank.
+==========================================================================
+{% endcomment %}
+
+{% block titulo %}Resultado del pago | Tienda de Hardware{% endblock %}
+
+{% block estilos %}
+  <link href="{% static 'css/cuenta.css' %}" rel="stylesheet">
+  <style>
+    .resultado-pago { max-width: 640px; margin: 0 auto; }
+    .estado-vacio .icono-ok { color: var(--verde-stock); }
+    .estado-vacio .icono-alerta { color: #B8860B; }
+    .estado-vacio .icono-error { color: #B42318; }
+    .comprobante th { font-weight: 600; color: var(--texto-suave); width: 45%; }
+    /* El ícono grande es solo el del estado; el de los botones va normal */
+    .resultado-pago .btn .bi { font-size: inherit; color: inherit; }
+  </style>
+{% endblock %}
+
+{% block contenido %}
+  <div class="container py-4">
+    <div class="resultado-pago">
+      <div class="estado-vacio">
+
+        {% if estado == 'AUTORIZADA' %}
+          <i class="bi bi-check-circle-fill icono-ok" aria-hidden="true"></i>
+          <h1 class="h3 fw-bold mt-2">¡Pago aprobado!</h1>
+          <p class="text-muted">Tu orden quedó pagada y está en preparación.</p>
+
+        {% elif estado == 'RECHAZADA' %}
+          <i class="bi bi-x-circle-fill icono-error" aria-hidden="true"></i>
+          <h1 class="h3 fw-bold mt-2">Pago rechazado</h1>
+          <p class="text-muted">El banco no aprobó el pago. No se realizó ningún cobro y tu orden sigue pendiente: puedes intentarlo nuevamente.</p>
+
+        {% elif estado == 'ANULADA' %}
+          <i class="bi bi-arrow-counterclockwise icono-alerta" aria-hidden="true"></i>
+          <h1 class="h3 fw-bold mt-2">Pago devuelto</h1>
+          <p class="text-muted">Mientras pagabas, uno de los productos se agotó o la orden cambió de estado. El pago fue anulado automáticamente y el monto se devolverá a tu tarjeta.</p>
+
+        {% elif estado == 'ABORTADA' %}
+          <i class="bi bi-slash-circle icono-alerta" aria-hidden="true"></i>
+          <h1 class="h3 fw-bold mt-2">Pago anulado</h1>
+          <p class="text-muted">Cancelaste el pago en Webpay o se agotó el tiempo. No se realizó ningún cobro y tu orden sigue pendiente.</p>
+
+        {% else %}
+          <i class="bi bi-exclamation-triangle-fill icono-error" aria-hidden="true"></i>
+          <h1 class="h3 fw-bold mt-2">No pudimos confirmar el pago</h1>
+          <p class="text-muted">Hubo un problema al comunicarnos con Transbank. Revisa el estado de tu orden en "Mis órdenes" antes de volver a pagar.</p>
+        {% endif %}
+
+        {% if orden %}
+          <table class="table comprobante text-start bg-white mt-3 mb-4">
+            <tbody>
+              <tr><th scope="row">Orden</th><td><span class="codigo-orden">#{{ orden.codigo|stringformat:"s"|slice:":8"|upper }}</span></td></tr>
+              <tr><th scope="row">Monto</th><td class="fw-bold">{{ monto }}</td></tr>
+              <tr><th scope="row">Orden de compra Webpay</th><td><span class="codigo-orden">{{ registro.orden_compra }}</span></td></tr>
+              {% if registro.codigo_autorizacion %}
+                <tr><th scope="row">Código de autorización</th><td><span class="codigo-orden">{{ registro.codigo_autorizacion }}</span></td></tr>
+              {% endif %}
+              {% if registro.ultimos_digitos %}
+                <tr><th scope="row">Tarjeta</th><td>**** **** **** {{ registro.ultimos_digitos }}</td></tr>
+              {% endif %}
+              {% if tipo_pago %}
+                <tr><th scope="row">Tipo de pago</th><td>{{ tipo_pago }}{% if registro.cuotas %} ({{ registro.cuotas }} cuotas){% endif %}</td></tr>
+              {% endif %}
+              <tr><th scope="row">Fecha</th><td>{{ registro.fecha_actualizacion|date:"d-m-Y H:i" }}</td></tr>
+            </tbody>
+          </table>
+        {% endif %}
+
+        <div class="d-flex flex-wrap gap-2 justify-content-center">
+          <a class="btn btn-cobre" href="/mis-ordenes/{% if orden %}?orden={{ orden.id }}{% endif %}">
+            <i class="bi bi-receipt me-1"></i>Ver mis órdenes
+          </a>
+          <a class="btn btn-outline-secondary" href="/catalogo/">Seguir comprando</a>
+        </div>
+      </div>
+    </div>
+  </div>
+{% endblock %}

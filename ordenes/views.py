@@ -5,15 +5,18 @@
    CLIENTE:        POST /api/ordenes/checkout/
                    GET  /api/mis-ordenes/
                    POST /api/ordenes/{id}/pagar/   (simulación de pago)
+                   POST /api/ordenes/{id}/webpay/  (pago real con Transbank)
    ADMINISTRADOR:  PATCH /api/ordenes/{id}/estado/
                    GET   /api/ordenes/             (todas las órdenes)
  La lógica de stock NO está aquí: está en services.py.
+ La comunicación con Transbank tampoco: está en webpay.py.
 ==========================================================================
 """
 from django.db import transaction
 from django.shortcuts import get_object_or_404
-from drf_spectacular.utils import OpenApiResponse, extend_schema
-from rest_framework import generics, status
+from django.urls import reverse
+from drf_spectacular.utils import OpenApiResponse, extend_schema, inline_serializer
+from rest_framework import generics, serializers, status
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
@@ -21,7 +24,7 @@ from rest_framework.views import APIView
 from carrito.models import Carrito
 from usuarios.permissions import EsAdministrador, EsCliente
 
-from . import services
+from . import services, webpay
 from .filters import OrdenFilter
 from .models import ItemOrden, Orden
 from .serializers import CambiarEstadoSerializer, OrdenSerializer
@@ -129,6 +132,52 @@ class PagarOrdenView(APIView):
     def post(self, request, pk):
         orden = get_object_or_404(Orden, pk=pk, usuario=request.user)
         return ejecutar_servicio(services.pagar_orden, orden.id)
+
+
+class IniciarWebpayView(APIView):
+    """
+    ----------------------------------------------------------------------
+    POST /api/ordenes/{id}/webpay/  (CLIENTE)
+    Inicia el pago con Transbank Webpay Plus. Solo el dueño de la orden
+    puede pagarla (si es de otro usuario, responde 404).
+    - url_retorno: dirección a la que Webpay devuelve al cliente. Se arma
+      con el dominio que usa el navegador (127.0.0.1, la IP o DuckDNS).
+    Respuesta 200: {"url": ..., "token": ...}. El JavaScript de la
+    tienda envía token_ws a esa url para abrir el formulario de Webpay.
+    ----------------------------------------------------------------------
+    """
+    permission_classes = [IsAuthenticated, EsCliente]
+
+    @extend_schema(
+        request=None,
+        responses={
+            200: inline_serializer(
+                name='InicioWebpay',
+                fields={'url': serializers.URLField(), 'token': serializers.CharField()},
+            ),
+            400: OpenApiResponse(description='La orden no está PENDIENTE.'),
+            409: OpenApiResponse(description='Stock insuficiente: no se inicia el pago.'),
+            502: OpenApiResponse(description='Transbank no respondió.'),
+        },
+    )
+    def post(self, request, pk):
+        orden = get_object_or_404(Orden, pk=pk, usuario=request.user)
+        url_retorno = request.build_absolute_uri(reverse('webpay-retorno'))
+        try:
+            url, token = webpay.iniciar_pago(orden, url_retorno)
+        except services.TransicionInvalida as error:
+            return Response({'detail': str(error)}, status=status.HTTP_400_BAD_REQUEST)
+        except services.StockInsuficiente as error:
+            return Response(
+                {
+                    'detail': 'No se puede pagar: stock insuficiente. La orden sigue PENDIENTE.',
+                    'productos': error.detalle,
+                },
+                status=status.HTTP_409_CONFLICT,
+            )
+        except webpay.ErrorWebpay as error:
+            return Response({'detail': str(error)}, status=status.HTTP_502_BAD_GATEWAY)
+        return Response({'url': url, 'token': token})
 
 
 class CambiarEstadoView(APIView):

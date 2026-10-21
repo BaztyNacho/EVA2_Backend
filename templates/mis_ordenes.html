@@ -5,11 +5,16 @@
  MIS ÓRDENES ( /mis-ordenes/ )  -  PÁGINA PRIVADA (solo CLIENTE)
  Endpoints usados:
    GET  /api/mis-ordenes/?estado=...     historial (filtro django-filter)
-   POST /api/ordenes/{id}/pagar/         simulación de pago
- Respuestas del pago:
-   200 -> la orden pasa a PAGADO y el stock se descuenta.
+   POST /api/ordenes/{id}/webpay/        inicia el pago con Transbank
+ Pago con Webpay Plus (ambiente de integración / pruebas):
+   200 -> la API entrega {url, token}; el navegador envía token_ws a esa
+          url con un formulario POST y el cliente paga en Webpay. Luego
+          Transbank lo devuelve a /pago/webpay/retorno/ (comprobante).
    409 -> stock insuficiente: se muestra qué producto falló y la orden
-          sigue PENDIENTE (la transacción hizo ROLLBACK).
+          sigue PENDIENTE (no se envía a Webpay).
+   502 -> Transbank no respondió.
+ El pago simulado (POST /api/ordenes/{id}/pagar/) sigue disponible en la
+ API, pero la tienda ahora usa Webpay.
  Si la URL trae ?orden=<id> (viene del checkout), esa orden se abre.
 ==========================================================================
 {% endcomment %}
@@ -43,7 +48,7 @@
     </div>
   </div>
 
-  <!-- Modal de confirmación del pago (simulado) -->
+  <!-- Modal de confirmación del pago con Webpay -->
   <div class="modal fade" id="modal-pago" tabindex="-1" aria-labelledby="titulo-modal-pago" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered">
       <div class="modal-content">
@@ -54,14 +59,19 @@
         <div class="modal-body">
           <p class="mb-2">Vas a pagar la orden <span class="codigo-orden" id="pago-codigo"></span> por un total de:</p>
           <p class="total-compra mb-3" id="pago-total"></p>
-          <p class="small text-muted mb-0">
-            Este pago es una simulación. Al confirmarlo se verifica el stock de todos
-            los productos y, si alcanza, se descuenta del catálogo.
+          <p class="small text-muted mb-2">
+            Serás redirigido a <strong>Webpay de Transbank</strong> para pagar con tarjeta.
+            El stock se descuenta solo cuando el pago es aprobado.
           </p>
+          <div class="alert alert-secondary small mb-0">
+            <p class="fw-semibold mb-1"><i class="bi bi-info-circle me-1"></i>Ambiente de pruebas: no se cobra dinero real</p>
+            Tarjeta VISA <span class="codigo-orden">4051 8856 0044 6623</span> · CVV <span class="codigo-orden">123</span> · cualquier fecha futura.<br>
+            Si pide autenticación: RUT <span class="codigo-orden">11.111.111-1</span> · clave <span class="codigo-orden">123</span>.
+          </div>
         </div>
         <div class="modal-footer">
           <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Volver</button>
-          <button type="button" class="btn btn-cobre" id="confirmar-pago">Pagar ahora</button>
+          <button type="button" class="btn btn-cobre" id="confirmar-pago"><i class="bi bi-credit-card me-1"></i>Ir a Webpay</button>
         </div>
       </div>
     </div>
@@ -156,7 +166,7 @@
             <div class="d-flex flex-wrap justify-content-between align-items-center gap-2">
               <span class="small text-muted">Código de orden: <span class="codigo-orden">${escaparHTML(orden.codigo)}</span></span>
               ${orden.estado === 'PENDIENTE'
-                ? `<button class="btn btn-cobre" type="button" data-pagar="${orden.id}"><i class="bi bi-credit-card me-1"></i>Pagar ahora</button>`
+                ? `<button class="btn btn-cobre" type="button" data-pagar="${orden.id}"><i class="bi bi-credit-card me-1"></i>Pagar con Webpay</button>`
                 : ''}
             </div>
           </div>
@@ -187,7 +197,7 @@
   }
 
   /* ==================================================================
-     PAGO: POST /api/ordenes/{id}/pagar/
+     PAGO CON WEBPAY: POST /api/ordenes/{id}/webpay/
      ================================================================== */
   function abrirModalPago(ordenId) {
     const elemento = document.getElementById(`orden-${ordenId}`);
@@ -197,21 +207,39 @@
     modalPago.show();
   }
 
+  /* Webpay exige que el token llegue por POST en un campo llamado
+     token_ws: se arma un formulario oculto y se envía. El navegador
+     sale de la tienda y abre el formulario de pago de Transbank. */
+  function irAWebpay(url, token) {
+    const formulario = document.createElement('form');
+    formulario.method = 'POST';
+    formulario.action = url;
+    const campo = document.createElement('input');
+    campo.type = 'hidden';
+    campo.name = 'token_ws';
+    campo.value = token;
+    formulario.appendChild(campo);
+    document.body.appendChild(formulario);
+    formulario.submit();
+  }
+
   document.getElementById('confirmar-pago').addEventListener('click', async evento => {
     const boton = evento.currentTarget;
+    const textoBoton = boton.innerHTML;
     boton.disabled = true;
-    boton.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Procesando...';
-    const { ok, status, datos } = await apiFetch(`/ordenes/${ordenPorPagar}/pagar/`, { method: 'POST' });
-    modalPago.hide();
-    boton.disabled = false;
-    boton.textContent = 'Pagar ahora';
-    ordenAbierta = ordenPorPagar;
+    boton.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Conectando con Webpay...';
+    const { ok, status, datos } = await apiFetch(`/ordenes/${ordenPorPagar}/webpay/`, { method: 'POST' });
 
+    // 200: se deja el botón cargando mientras el navegador cambia de página
     if (ok) {
-      mostrarToast('Pago confirmado. Tu orden está en preparación.', 'success');
-      await cargarOrdenes();
+      irAWebpay(datos.url, datos.token);
       return;
     }
+
+    modalPago.hide();
+    boton.disabled = false;
+    boton.innerHTML = textoBoton;
+    ordenAbierta = ordenPorPagar;
 
     // 409: stock insuficiente. Se explica dentro de la misma orden.
     if (status === 409) {
@@ -220,9 +248,9 @@
         : `<li><strong>${escaparHTML(p.producto)}</strong>: pediste ${p.solicitado}, quedan ${p.disponible}.</li>`).join('');
       document.getElementById(`mensaje-orden-${ordenPorPagar}`).innerHTML = `
         <div class="alert alert-danger" role="alert">
-          <p class="fw-semibold mb-1"><i class="bi bi-exclamation-octagon me-1"></i>Pago rechazado por stock insuficiente</p>
+          <p class="fw-semibold mb-1"><i class="bi bi-exclamation-octagon me-1"></i>No se puede pagar: stock insuficiente</p>
           <ul class="mb-1">${detalle}</ul>
-          <p class="small mb-0">No se descontó nada y tu orden sigue pendiente.</p>
+          <p class="small mb-0">No se realizó ningún cobro y tu orden sigue pendiente.</p>
         </div>`;
       return;
     }
@@ -242,6 +270,13 @@
     pestana.classList.add('active');
     estadoActual = pestana.dataset.estado;
     cargarOrdenes();
+  });
+
+  /* Si el cliente vuelve desde Webpay con el botón "Atrás", el navegador
+     puede mostrar la página guardada en caché (con el modal abierto y el
+     botón cargando). En ese caso se recarga para mostrar datos frescos. */
+  window.addEventListener('pageshow', evento => {
+    if (evento.persisted) window.location.reload();
   });
 
   if (usuario) document.addEventListener('DOMContentLoaded', cargarOrdenes);

@@ -23,6 +23,7 @@ from .views import (
     pagina_registro,
     pagina_ventas,
     ruta_no_encontrada,
+    webpay_retorno,
 )
 
 
@@ -56,6 +57,13 @@ urlpatterns = [
     path('mis-ordenes/', pagina_mis_ordenes, name='pagina-mis-ordenes'),
     path('panel/', pagina_panel, name='pagina-panel'),
     path('ventas/', pagina_ventas, name='pagina-ventas'),
+
+    # --------------------------------------------------------------
+    # Retorno desde Transbank Webpay Plus (resultado del pago).
+    # Va fuera de /api/ porque el navegador llega aquí NAVEGANDO, y el
+    # middleware bloquea la navegación a /api/ de quien no es admin.
+    # --------------------------------------------------------------
+    path('pago/webpay/retorno/', webpay_retorno, name='webpay-retorno'),
 
     # --------------------------------------------------------------
     # Panel de administración de Django (solo superusuario)

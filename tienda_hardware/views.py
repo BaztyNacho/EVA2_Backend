@@ -4,6 +4,8 @@
  Estas vistas solo entregan la plantilla (el "esqueleto" de la página).
  Los datos los carga el JavaScript de cada página consumiendo la API
  con JWT (static/js/api.js), igual que lo haría cualquier otro cliente.
+ - webpay_retorno: página a la que Transbank devuelve al cliente después
+   de pagar. Es la única vista HTML que procesa datos en el servidor.
  - ruta_no_encontrada: responde a cualquier URL inexistente capturada
    por el re_path comodín de urls.py (y también como handler404).
 ==========================================================================
@@ -11,8 +13,22 @@
 from django.http import JsonResponse
 from django.shortcuts import redirect, render
 from django.urls import Resolver404, resolve
+from django.views.decorators.csrf import csrf_exempt
+from django.views.decorators.http import require_http_methods
 
 from catalogo.models import Producto
+from ordenes import webpay
+
+# Nombres de los tipos de pago que informa Transbank (payment_type_code)
+TIPOS_PAGO = {
+    'VD': 'Débito',
+    'VP': 'Prepago',
+    'VN': 'Crédito',
+    'VC': 'Crédito en cuotas',
+    'SI': 'Crédito, 3 cuotas sin interés',
+    'S2': 'Crédito, 2 cuotas sin interés',
+    'NC': 'Crédito, cuotas sin interés',
+}
 
 
 def inicio(request):
@@ -80,6 +96,46 @@ def pagina_ventas(request):
     Los datos vienen de GET /api/reportes/ventas/, que valida el rol.
     """
     return render(request, 'ventas.html')
+
+
+@csrf_exempt
+@require_http_methods(['GET', 'POST'])
+def webpay_retorno(request):
+    """
+    ----------------------------------------------------------------------
+    GET o POST /pago/webpay/retorno/  -> resultado del pago con Webpay.
+    Transbank redirige aquí al cliente. Según los datos que envía:
+      - token_ws solo           -> pago terminado: se confirma (commit).
+      - TBK_TOKEN               -> el cliente presionó "Anular".
+      - TBK_ORDEN_COMPRA solo   -> se agotó el tiempo del formulario.
+      - nada                    -> se vuelve a "Mis órdenes".
+    @csrf_exempt: el POST viene desde el sitio de Transbank, que no
+    conoce nuestro token CSRF. Es seguro porque el pago se valida
+    consultando a Transbank con el token, no con datos del formulario.
+    ----------------------------------------------------------------------
+    """
+    datos = request.POST if request.method == 'POST' else request.GET
+    token_ws = datos.get('token_ws')
+    tbk_token = datos.get('TBK_TOKEN')
+    tbk_orden_compra = datos.get('TBK_ORDEN_COMPRA')
+
+    if tbk_token or (tbk_orden_compra and not token_ws):
+        registro = webpay.abortar_pago(token=tbk_token, orden_compra=tbk_orden_compra)
+        estado = 'ABORTADA'
+    elif token_ws:
+        registro = webpay.confirmar_pago(token_ws)
+        estado = registro.estado if registro else 'ERROR'
+    else:
+        return redirect('pagina-mis-ordenes')
+
+    contexto = {
+        'estado': estado,
+        'registro': registro,
+        'orden': registro.orden if registro else None,
+        'monto': f'${registro.monto:,}'.replace(',', '.') if registro else '',
+        'tipo_pago': TIPOS_PAGO.get(registro.tipo_pago, registro.tipo_pago) if registro else '',
+    }
+    return render(request, 'pago_resultado.html', contexto)
 
 
 def ruta_no_encontrada(request, exception=None):
